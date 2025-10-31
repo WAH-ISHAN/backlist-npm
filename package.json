@@ -1,11 +1,15 @@
 {
   "name": "create-backlist",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "An advanced, multi-language backend generator based on frontend analysis.",
   "type": "commonjs",
   "bin": {
     "create-backlist": "bin/index.js"
   },
+  "files": [
+    "bin",
+    "src"
+  ],
   "scripts": {
     "start": "node bin/index.js"
   },
