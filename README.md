@@ -12,12 +12,16 @@ It's not just another scaffolder; it's a **context-aware, dynamic code generator
 ## ✨ Key Features
 
 -   **🤖 Intelligent Code Analysis:** Scans your frontend codebase (React, Vue, etc.) using Abstract Syntax Trees (ASTs) to detect API calls (`fetch` requests).
--   **🌐 Multi-Language Support:** Generate a backend in your preferred stack. Currently supports:
-    -   Node.js (with TypeScript & Express)
-    -   C# (with ASP.NET Core Web API)
+-   **🌐 Multi-Language Support:** Generate a backend in your preferred stack.
+    -   ✅ **Currently Supports:**
+        -   Node.js (with TypeScript & Express)
+        -   C# (with ASP.NET Core Web API)
+    -   ⏳ **Coming Soon:**
+        -   Python (with FastAPI)
+        -   Java (with Spring Boot)
 -   **⚡️ Fully Automated:** A single command handles everything from project scaffolding to dependency installation.
 -   **🔧 Zero-Configuration:** No complex config files needed. Just run the command and answer a few simple questions.
--   ** clean Code Generation:** Creates a well-structured backend, ready for you to implement your business logic.
+-   **🧼 Clean Code Generation:** Creates a well-structured backend, ready for you to implement your business logic.
 
 ## 📦 Installation & Usage
 
@@ -56,6 +60,17 @@ fetch('/api/products/123', { method: 'PUT' });
 
 While traditional generators give you a blank canvas, `create-backlist` looks at your finished painting (the frontend) and builds the perfect frame (the backend) for it.
 
+## 🗺️ Roadmap
+
+`create-backlist` is actively being developed. Here are some of the features planned for future releases:
+
+-   [ ] **Python Support:** Generate a backend using FastAPI.
+-   [ ] **Java Support:** Generate a backend using Spring Boot.
+-   [ ] **Database Model Generation:** Automatically create basic database models (e.g., Mongoose, Prisma) based on `POST`/`PUT` request bodies.
+-   [ ] **Authentication Boilerplate:** Add an option to generate basic JWT-based authentication routes (`/login`, `/register`).
+
+Have an idea for a new feature? Feel free to [open an issue](https://github.com/WAH-ISHAN/create-backlist/issues) on GitHub!
+
 ## 🛠️ Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
@@ -79,4 +94,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-_Built with ❤️ by [https://github.com/WAH-ISHAN])._
+_Built with ❤️ by [W.A.H. ISHAN](https://github.com/WAH-ISHAN)._
