@@ -72,9 +72,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgements
 
--   [Babel](https://babeljs.io/) for the amazing AST parser.
--   [Inquirer.js](https://github.com/SBoudrias/Inquirer.js) for the interactive CLI prompts.
--   [fs-extra](https://github.com/jprichardson/node-fs-extra) for making file system operations a breeze.
+-   **Babel** for the amazing AST parser.
+-   **Inquirer.js** for the interactive CLI prompts.
+-   **fs-extra** for making file system operations a breeze.
+-   **Google's Gemini** for assistance with brainstorming and debugging.
 
 ---
 
