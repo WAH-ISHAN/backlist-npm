@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node bin/index.js"
   },
-  "author": "Your Name",
+  "author": "W.A.H.ISHAN",
   "license": "MIT",
   "dependencies": {
     "@babel/parser": "^7.22.7",
