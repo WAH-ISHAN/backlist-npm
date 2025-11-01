@@ -1,6 +1,6 @@
 {
   "name": "create-backlist",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "An advanced, multi-language backend generator based on frontend analysis.",
   "type": "commonjs",
   "bin": {
@@ -18,11 +18,13 @@
   "dependencies": {
     "@babel/parser": "^7.22.7",
     "@babel/traverse": "^7.22.8",
+    "axios": "^1.13.1",
     "chalk": "^4.1.2",
     "ejs": "^3.1.9",
     "execa": "^6.1.0",
     "fs-extra": "^11.1.1",
     "glob": "^10.3.3",
-    "inquirer": "^8.2.4"
+    "inquirer": "^8.2.4",
+    "unzipper": "^0.12.3"
   }
 }

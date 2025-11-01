@@ -36,39 +36,39 @@ async function generateNodeProject(options) {
     await fs.copy(getTemplatePath('node-ts-express/base/server.ts'), path.join(destSrcDir, 'server.ts'));
     await fs.copy(getTemplatePath('node-ts-express/base/tsconfig.json'), path.join(projectDir, 'tsconfig.json'));
     
-    // --- Step 4: Prepare and Write package.json with All Conditional Dependencies ---
+    // --- Step 4: Prepare and Write package.json ---
     const packageJsonContent = JSON.parse(await ejs.renderFile(getTemplatePath('node-ts-express/partials/package.json.ejs'), { projectName }));
     
-    if (dbType === 'mongoose') packageJsonContent.dependencies['mongoose'] = '^7.5.0';
+    if (dbType === 'mongoose') packageJsonContent.dependencies['mongoose'] = '^7.6.3';
     if (dbType === 'prisma') {
-      packageJsonContent.dependencies['@prisma/client'] = '^5.5.2';
-      packageJsonContent.devDependencies['prisma'] = '^5.5.2';
+      packageJsonContent.dependencies['@prisma/client'] = '^5.6.0';
+      packageJsonContent.devDependencies['prisma'] = '^5.6.0';
       packageJsonContent.prisma = { seed: `ts-node ${addSeeder ? 'scripts/seeder.ts' : 'prisma/seed.ts'}` };
     }
     if (addAuth) {
       packageJsonContent.dependencies['jsonwebtoken'] = '^9.0.2';
       packageJsonContent.dependencies['bcryptjs'] = '^2.4.3';
-      packageJsonContent.devDependencies['@types/jsonwebtoken'] = '^9.0.2';
-      packageJsonContent.devDependencies['@types/bcryptjs'] = '^2.4.2';
+      packageJsonContent.devDependencies['@types/jsonwebtoken'] = '^9.0.5';
+      packageJsonContent.devDependencies['@types/bcryptjs'] = '^2.4.6';
     }
     if (addSeeder) {
-      packageJsonContent.devDependencies['@faker-js/faker'] = '^8.2.0';
-      packageJsonContent.dependencies['chalk'] = '^4.1.2';
+      packageJsonContent.devDependencies['@faker-js/faker'] = '^8.3.1';
+      if (!packageJsonContent.dependencies['chalk']) packageJsonContent.dependencies['chalk'] = '^4.1.2';
       packageJsonContent.scripts['seed'] = `ts-node scripts/seeder.ts`;
       packageJsonContent.scripts['destroy'] = `ts-node scripts/seeder.ts -d`;
     }
     if (extraFeatures.includes('testing')) {
       packageJsonContent.devDependencies['jest'] = '^29.7.0';
       packageJsonContent.devDependencies['supertest'] = '^6.3.3';
-      packageJsonContent.devDependencies['@types/jest'] = '^29.5.5';
-      packageJsonContent.devDependencies['@types/supertest'] = '^2.0.14';
+      packageJsonContent.devDependencies['@types/jest'] = '^29.5.10';
+      packageJsonContent.devDependencies['@types/supertest'] = '^2.0.16';
       packageJsonContent.devDependencies['ts-jest'] = '^29.1.1';
-      packageJsonContent.scripts['test'] = 'jest --detectOpenHandles';
+      packageJsonContent.scripts['test'] = 'jest --detectOpenHandles --forceExit';
     }
     if (extraFeatures.includes('swagger')) {
       packageJsonContent.dependencies['swagger-ui-express'] = '^5.0.0';
       packageJsonContent.dependencies['swagger-jsdoc'] = '^6.2.8';
-      packageJsonContent.devDependencies['@types/swagger-ui-express'] = '^4.1.4';
+      packageJsonContent.devDependencies['@types/swagger-ui-express'] = '^4.1.6';
     }
     await fs.writeJson(path.join(projectDir, 'package.json'), packageJsonContent, { spaces: 2 });
     
@@ -93,9 +93,37 @@ async function generateNodeProject(options) {
         }
     }
     
-    // --- Step 6: Generate Auth, Seeder, and Extra Features ---
-    if (addAuth) { /* ... Logic from v4.0 ... */ }
-    if (addSeeder) { /* ... Logic from v4.0 ... */ }
+    // --- Step 6: Generate Authentication Boilerplate ---
+    if (addAuth) {
+        console.log(chalk.blue('  -> Generating authentication boilerplate...'));
+        await fs.ensureDir(path.join(destSrcDir, 'routes'));
+        await fs.ensureDir(path.join(destSrcDir, 'middleware'));
+        await renderAndWrite(getTemplatePath('node-ts-express/partials/Auth.controller.ts.ejs'), path.join(destSrcDir, 'controllers', 'Auth.controller.ts'), {});
+        await renderAndWrite(getTemplatePath('node-ts-express/partials/Auth.routes.ts.ejs'), path.join(destSrcDir, 'routes', 'Auth.routes.ts'), {});
+        await renderAndWrite(getTemplatePath('node-ts-express/partials/Auth.middleware.ts.ejs'), path.join(destSrcDir, 'middleware', 'Auth.middleware.ts'), {});
+        
+        if (dbType === 'mongoose') {
+            const userModelPath = path.join(destSrcDir, 'models', 'User.model.ts');
+            if (await fs.pathExists(userModelPath)) {
+                let userModelContent = await fs.readFile(userModelPath, 'utf-8');
+                if (!userModelContent.includes('bcryptjs')) {
+                    userModelContent = userModelContent.replace(`import mongoose, { Schema, Document } from 'mongoose';`, `import mongoose, { Schema, Document } from 'mongoose';\nimport bcrypt from 'bcryptjs';`);
+                    const preSaveHook = `\n// Hash password before saving\nUserSchema.pre('save', async function(next) {\n  if (!this.isModified('password')) {\n    return next();\n  }\n  const salt = await bcrypt.genSalt(10);\n  this.password = await bcrypt.hash(this.password, salt);\n  next();\n});\n`;
+                    userModelContent = userModelContent.replace(`// Create and export the Model`, `${preSaveHook}\n// Create and export the Model`);
+                    await fs.writeFile(userModelPath, userModelContent);
+                }
+            }
+        }
+    }
+
+    // --- Step 7: Generate Seeder Script ---
+    if (addSeeder) {
+      console.log(chalk.blue('  -> Generating database seeder script...'));
+      await fs.ensureDir(path.join(projectDir, 'scripts'));
+      await renderAndWrite(getTemplatePath('node-ts-express/partials/Seeder.ts.ejs'), path.join(projectDir, 'scripts', 'seeder.ts'), { projectName });
+    }
+
+    // --- Step 8: Generate Extra Features ---
     if (extraFeatures.includes('docker')) {
       console.log(chalk.blue('  -> Generating Docker files...'));
       await renderAndWrite(getTemplatePath('node-ts-express/partials/Dockerfile.ejs'), path.join(projectDir, 'Dockerfile'), { dbType, port });
@@ -108,13 +136,13 @@ async function generateNodeProject(options) {
     }
     if (extraFeatures.includes('testing')) {
       console.log(chalk.blue('  -> Generating testing boilerplate...'));
-      const jestConfig = `module.exports = { preset: 'ts-jest', testEnvironment: 'node' };`;
+      const jestConfig = `/** @type {import('ts-jest').JestConfigWithTsJest} */\nmodule.exports = {\n  preset: 'ts-jest',\n  testEnvironment: 'node',\n  verbose: true,\n};`;
       await fs.writeFile(path.join(projectDir, 'jest.config.js'), jestConfig);
       await fs.ensureDir(path.join(projectDir, 'src', '__tests__'));
       await renderAndWrite(getTemplatePath('node-ts-express/partials/App.test.ts.ejs'), path.join(projectDir, 'src', '__tests__', 'api.test.ts'), { addAuth });
     }
 
-    // --- Step 7: Generate Main Route File & Inject Logic into Server ---
+    // --- Step 9: Generate Main Route File & Inject Logic into Server ---
     await renderAndWrite(getTemplatePath('node-ts-express/partials/routes.ts.ejs'), path.join(destSrcDir, 'routes.ts'), { endpoints, addAuth, dbType });
     
     let serverFileContent = await fs.readFile(path.join(destSrcDir, 'server.ts'), 'utf-8');
@@ -134,23 +162,31 @@ async function generateNodeProject(options) {
 
     serverFileContent = serverFileContent
       .replace("dotenv.config();", `dotenv.config();${dbConnectionCode}`)
-      .replace('// INJECT:ROUTES', `${authRoutesInjector}import apiRoutes from './routes';\napp.use('/api', apiRoutes);\n${swaggerInjector}`);
+      .replace('// INJECT:ROUTES', `${authRoutesInjector}import apiRoutes from './routes';\napp.use('/api', apiRoutes);`);
+      
+    const listenRegex = /(app\.listen\()/;
+    serverFileContent = serverFileContent.replace(listenRegex, `${swaggerInjector}\n$1`);
     await fs.writeFile(path.join(destSrcDir, 'server.ts'), serverFileContent);
 
-    // --- Step 8: Install Dependencies & Run Post-install Scripts ---
+    // --- Step 10: Install Dependencies & Run Post-install Scripts ---
     console.log(chalk.magenta('  -> Installing dependencies... This may take a moment.'));
     await execa('npm', ['install'], { cwd: projectDir });
     if (dbType === 'prisma') {
       console.log(chalk.blue('  -> Running `prisma generate`...'));
       await execa('npx', ['prisma', 'generate'], { cwd: projectDir });
     }
-
-    // --- Step 9: Generate Final Files (.env.example) ---
+    
+    // --- Step 11: Generate Final Files (.env.example) ---
     let envContent = `PORT=${port}\n`;
-    if (dbType === 'mongoose') envContent += `DATABASE_URL=mongodb://root:example@localhost:27017/${projectName}?authSource=admin\n`;
-    if (dbType === 'prisma') envContent += `DATABASE_URL="postgresql://user:password@localhost:5432/${projectName}?schema=public"\n`;
-    if (addAuth) envContent += `JWT_SECRET=your_super_secret_key\n`;
-    if (extraFeatures.includes('docker')) envContent += `\n# Docker-compose credentials\nDB_USER=user\nDB_PASSWORD=password\nDB_NAME=${projectName}`;
+    if (dbType === 'mongoose') {
+        envContent += `MONGO_URI=mongodb://root:example@db:27017/${projectName}?authSource=admin\n`;
+    } else if (dbType === 'prisma') {
+        envContent += `DATABASE_URL="postgresql://user:password@db:5432/${projectName}?schema=public"\n`;
+    }
+    if (addAuth) envContent += `JWT_SECRET=your_super_secret_jwt_key_12345\n`;
+    if (extraFeatures.includes('docker')) {
+        envContent += `\n# Docker-compose credentials (used in docker-compose.yml)\nDB_USER=user\nDB_PASSWORD=password\nDB_NAME=${projectName}`;
+    }
     await fs.writeFile(path.join(projectDir, '.env.example'), envContent);
     
   } catch (error) {

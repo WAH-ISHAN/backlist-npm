@@ -98,6 +98,18 @@ async function main() {
         ],
         when: (answers) => answers.stack === 'node-ts-express'
     },
+     {
+      type: 'list',
+      name: 'stack',
+      message: 'Select the backend stack:',
+      choices: [
+        { name: 'Node.js (TypeScript, Express)', value: 'node-ts-express' },
+        { name: 'C# (ASP.NET Core Web API)', value: 'dotnet-webapi' },
+        new inquirer.Separator(),
+        { name: 'Python (FastAPI) - Coming Soon', disabled: true, value: 'python-fastapi' },
+        { name: 'Java (Spring Boot)', value: 'java-spring' }, // <-- ENABLED!
+      ],
+    },
   ]);
 
   const options = {
