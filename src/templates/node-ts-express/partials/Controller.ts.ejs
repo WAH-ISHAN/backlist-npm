@@ -9,6 +9,9 @@ export const create<%= modelName %> = async (req: Request, res: Response) => {
     await newDoc.save();
     res.status(201).json(newDoc);
   } catch (error) {
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: 'Validation Error', errors: error.errors });
+    }
     res.status(500).json({ message: 'Error creating document', error });
   }
 };
@@ -41,6 +44,9 @@ export const update<%= modelName %>ById = async (req: Request, res: Response) =>
     if (!doc) return res.status(404).json({ message: 'Document not found' });
     res.status(200).json(doc);
   } catch (error) {
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: 'Validation Error', errors: error.errors });
+    }
     res.status(500).json({ message: 'Error updating document', error });
   }
 };
@@ -50,6 +56,7 @@ export const delete<%= modelName %>ById = async (req: Request, res: Response) =>
   try {
     const doc = await <%= modelName %>.findByIdAndDelete(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
+    // For DELETE, it's common to return a success message or just a 204 No Content status.
     res.status(200).json({ message: 'Document deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting document', error });
