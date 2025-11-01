@@ -34,19 +34,26 @@ async function main() {
       ],
     },
     {
-        type: 'input',
-        name: 'srcPath',
-        message: 'Enter the path to your frontend `src` directory:',
-        default: 'src',
+      type: 'input',
+      name: 'srcPath',
+      message: 'Enter the path to your frontend `src` directory:',
+      default: 'src',
     },
-    // --- NEW QUESTION FOR V3.0 ---
     {
       type: 'confirm',
       name: 'addAuth',
       message: 'Do you want to add basic JWT authentication? (generates a User model, login/register routes)',
       default: true,
-      // This question will only be asked if the user selects the Node.js stack
       when: (answers) => answers.stack === 'node-ts-express'
+    },
+    // --- NEW QUESTION FOR V4.0 ---
+    {
+      type: 'confirm',
+      name: 'addSeeder',
+      message: 'Do you want to add a database seeder with sample user data?',
+      default: true,
+      // Only ask this if Node.js is selected AND authentication is being added
+      when: (answers) => answers.stack === 'node-ts-express' && answers.addAuth
     }
   ]);
 
@@ -71,7 +78,6 @@ async function main() {
           throw new Error('.NET SDK is not installed. Please install it from https://dotnet.microsoft.com/download');
         }
         await generateDotnetProject(options);
-
         break;
       
       default:
