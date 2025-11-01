@@ -1,6 +1,6 @@
 {
   "name": "create-backlist",
-  "version": "1.3.3",
+  "version": "2.0.0",
   "description": "An advanced, multi-language backend generator based on frontend analysis.",
   "type": "commonjs",
   "bin": {
