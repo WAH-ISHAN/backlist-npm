@@ -11,7 +11,7 @@ const { generateNodeProject } = require('../src/generators/node');
 const { generateDotnetProject } = require('../src/generators/dotnet');
 
 async function main() {
-  console.log(chalk.cyan.bold('🚀 Welcome to Backlist! The Intelligent Backend Generator.'));
+  console.log(chalk.cyan.bold('🚀 Welcome to Backlist! The Production-Ready Backend Generator.'));
   
   const answers = await inquirer.prompt([
     {
@@ -29,9 +29,20 @@ async function main() {
         { name: 'Node.js (TypeScript, Express)', value: 'node-ts-express' },
         { name: 'C# (ASP.NET Core Web API)', value: 'dotnet-webapi' },
         new inquirer.Separator(),
-        { name: 'Python (FastAPI) - Coming Soon', disabled: true },
-        { name: 'Java (Spring Boot) - Coming Soon', disabled: true },
+        { name: 'Python (FastAPI) - Coming Soon', disabled: true, value: 'python-fastapi' },
+        { name: 'Java (Spring Boot) - Coming Soon', disabled: true, value: 'java-spring' },
       ],
+    },
+    // --- V5.0: Database Choice for Node.js ---
+    {
+      type: 'list',
+      name: 'dbType',
+      message: 'Select your database type:',
+      choices: [
+        { name: 'NoSQL (MongoDB with Mongoose)', value: 'mongoose' },
+        { name: 'SQL (PostgreSQL/MySQL with Prisma)', value: 'prisma' },
+      ],
+      when: (answers) => answers.stack === 'node-ts-express'
     },
     {
       type: 'input',
@@ -39,27 +50,58 @@ async function main() {
       message: 'Enter the path to your frontend `src` directory:',
       default: 'src',
     },
+    // --- V3.0: Auth Boilerplate for Node.js ---
     {
       type: 'confirm',
       name: 'addAuth',
-      message: 'Do you want to add basic JWT authentication? (generates a User model, login/register routes)',
+      message: 'Add JWT authentication boilerplate?',
       default: true,
       when: (answers) => answers.stack === 'node-ts-express'
     },
-    // --- NEW QUESTION FOR V4.0 ---
+    // --- V4.0: Seeder for Node.js ---
     {
       type: 'confirm',
       name: 'addSeeder',
-      message: 'Do you want to add a database seeder with sample user data?',
+      message: 'Add a database seeder with sample data?',
       default: true,
-      // Only ask this if Node.js is selected AND authentication is being added
-      when: (answers) => answers.stack === 'node-ts-express' && answers.addAuth
-    }
+      when: (answers) => answers.addAuth // Seeder is useful when there's an auth/user model
+    },
+    // --- V5.0: Extra Features for Node.js ---
+    {
+      type: 'checkbox',
+      name: 'extraFeatures',
+      message: 'Select additional features to include:',
+      choices: [
+          { name: 'Docker Support (Dockerfile & docker-compose.yml)', value: 'docker', checked: true },
+          { name: 'API Testing Boilerplate (Jest & Supertest)', value: 'testing' },
+          { name: 'API Documentation (Swagger UI)', value: 'swagger' },
+      ],
+      when: (answers) => answers.stack === 'node-ts-express'
+    },
+     {
+      type: 'list',
+      name: 'dbType',
+      message: 'Select your database type:',
+      choices: [
+        { name: 'NoSQL (MongoDB with Mongoose)', value: 'mongoose' },
+        { name: 'SQL (PostgreSQL/MySQL with Prisma)', value: 'prisma' },
+      ],
+      when: (answers) => answers.stack === 'node-ts-express'
+    },
+    {
+        type: 'checkbox',
+        name: 'extraFeatures',
+        message: 'Select additional features to include:',
+        choices: [
+            { name: 'Docker Support (Dockerfile & docker-compose.yml)', value: 'docker', checked: true },
+            // ... other features
+        ],
+        when: (answers) => answers.stack === 'node-ts-express'
+    },
   ]);
 
-  // Pass all answers to the options object
   const options = {
-    ...answers, 
+    ...answers,
     projectDir: path.resolve(process.cwd(), answers.projectName),
     frontendSrcDir: path.resolve(process.cwd(), answers.srcPath),
   };
@@ -70,18 +112,19 @@ async function main() {
     // --- Dispatcher Logic ---
     switch (options.stack) {
       case 'node-ts-express':
-        await generateNodeProject(options); // Pass the entire options object
+        await generateNodeProject(options);
         break;
 
       case 'dotnet-webapi':
         if (!await isCommandAvailable('dotnet')) {
           throw new Error('.NET SDK is not installed. Please install it from https://dotnet.microsoft.com/download');
         }
+        // Note: The dotnet generator currently only supports basic route generation (v1.0 features).
         await generateDotnetProject(options);
         break;
       
       default:
-        throw new Error(`The selected stack '${options.stack}' is not supported.`);
+        throw new Error(`The selected stack '${options.stack}' is not supported yet.`);
     }
 
     console.log(chalk.green.bold('\n✅ Backend generation complete!'));
@@ -90,8 +133,9 @@ async function main() {
     console.log(chalk.cyan('  (Check the generated README.md for instructions)'));
 
   } catch (error) {
-    console.error(chalk.red.bold('\n❌ An error occurred:'));
-    console.error(chalk.red(`  ${error.message}`));
+    console.error(chalk.red.bold('\n❌ An error occurred during generation:'));
+    // Make sure we print the full error for debugging
+    console.error(error); 
     
     if (fs.existsSync(options.projectDir)) {
       console.log(chalk.yellow('  -> Cleaning up failed installation...'));
