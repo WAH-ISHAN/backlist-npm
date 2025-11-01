@@ -38,11 +38,21 @@ async function main() {
         name: 'srcPath',
         message: 'Enter the path to your frontend `src` directory:',
         default: 'src',
+    },
+    // --- NEW QUESTION FOR V3.0 ---
+    {
+      type: 'confirm',
+      name: 'addAuth',
+      message: 'Do you want to add basic JWT authentication? (generates a User model, login/register routes)',
+      default: true,
+      // This question will only be asked if the user selects the Node.js stack
+      when: (answers) => answers.stack === 'node-ts-express'
     }
   ]);
 
+  // Pass all answers to the options object
   const options = {
-    ...answers,
+    ...answers, 
     projectDir: path.resolve(process.cwd(), answers.projectName),
     frontendSrcDir: path.resolve(process.cwd(), answers.srcPath),
   };
@@ -53,7 +63,7 @@ async function main() {
     // --- Dispatcher Logic ---
     switch (options.stack) {
       case 'node-ts-express':
-        await generateNodeProject(options);
+        await generateNodeProject(options); // Pass the entire options object
         break;
 
       case 'dotnet-webapi':
@@ -61,6 +71,7 @@ async function main() {
           throw new Error('.NET SDK is not installed. Please install it from https://dotnet.microsoft.com/download');
         }
         await generateDotnetProject(options);
+
         break;
       
       default:
