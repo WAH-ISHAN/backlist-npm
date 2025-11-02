@@ -3,7 +3,7 @@
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const fs = require('fs-extra');
-const path = 'path';
+const path = require('path'); // FIX: Correctly require the 'path' module
 const { isCommandAvailable } = require('../src/utils');
 
 // Import ALL generators
