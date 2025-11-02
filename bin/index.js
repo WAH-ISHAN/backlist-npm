@@ -3,17 +3,20 @@
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const fs = require('fs-extra');
-const path = require('path');
+const path = 'path';
 const { isCommandAvailable } = require('../src/utils');
 
-// Import generators
+// Import ALL generators
 const { generateNodeProject } = require('../src/generators/node');
 const { generateDotnetProject } = require('../src/generators/dotnet');
+const { generateJavaProject } = require('../src/generators/java');
+const { generatePythonProject } = require('../src/generators/python');
 
 async function main() {
-  console.log(chalk.cyan.bold('🚀 Welcome to Backlist! The Production-Ready Backend Generator.'));
+  console.log(chalk.cyan.bold('🚀 Welcome to Backlist! The Polyglot Backend Generator.'));
   
   const answers = await inquirer.prompt([
+    // --- General Questions ---
     {
       type: 'input',
       name: 'projectName',
@@ -28,21 +31,9 @@ async function main() {
       choices: [
         { name: 'Node.js (TypeScript, Express)', value: 'node-ts-express' },
         { name: 'C# (ASP.NET Core Web API)', value: 'dotnet-webapi' },
-        new inquirer.Separator(),
-        { name: 'Python (FastAPI) - Coming Soon', disabled: true, value: 'python-fastapi' },
-        { name: 'Java (Spring Boot) - Coming Soon', disabled: true, value: 'java-spring' },
+        { name: 'Java (Spring Boot)', value: 'java-spring' },
+        { name: 'Python (FastAPI)', value: 'python-fastapi' },
       ],
-    },
-    // --- V5.0: Database Choice for Node.js ---
-    {
-      type: 'list',
-      name: 'dbType',
-      message: 'Select your database type:',
-      choices: [
-        { name: 'NoSQL (MongoDB with Mongoose)', value: 'mongoose' },
-        { name: 'SQL (PostgreSQL/MySQL with Prisma)', value: 'prisma' },
-      ],
-      when: (answers) => answers.stack === 'node-ts-express'
     },
     {
       type: 'input',
@@ -50,38 +41,12 @@ async function main() {
       message: 'Enter the path to your frontend `src` directory:',
       default: 'src',
     },
-    // --- V3.0: Auth Boilerplate for Node.js ---
+
+    // --- Node.js Specific Questions ---
     {
-      type: 'confirm',
-      name: 'addAuth',
-      message: 'Add JWT authentication boilerplate?',
-      default: true,
-      when: (answers) => answers.stack === 'node-ts-express'
-    },
-    // --- V4.0: Seeder for Node.js ---
-    {
-      type: 'confirm',
-      name: 'addSeeder',
-      message: 'Add a database seeder with sample data?',
-      default: true,
-      when: (answers) => answers.addAuth // Seeder is useful when there's an auth/user model
-    },
-    // --- V5.0: Extra Features for Node.js ---
-    {
-      type: 'checkbox',
-      name: 'extraFeatures',
-      message: 'Select additional features to include:',
-      choices: [
-          { name: 'Docker Support (Dockerfile & docker-compose.yml)', value: 'docker', checked: true },
-          { name: 'API Testing Boilerplate (Jest & Supertest)', value: 'testing' },
-          { name: 'API Documentation (Swagger UI)', value: 'swagger' },
-      ],
-      when: (answers) => answers.stack === 'node-ts-express'
-    },
-     {
       type: 'list',
       name: 'dbType',
-      message: 'Select your database type:',
+      message: 'Select your database type for Node.js:',
       choices: [
         { name: 'NoSQL (MongoDB with Mongoose)', value: 'mongoose' },
         { name: 'SQL (PostgreSQL/MySQL with Prisma)', value: 'prisma' },
@@ -89,27 +54,31 @@ async function main() {
       when: (answers) => answers.stack === 'node-ts-express'
     },
     {
-        type: 'checkbox',
-        name: 'extraFeatures',
-        message: 'Select additional features to include:',
-        choices: [
-            { name: 'Docker Support (Dockerfile & docker-compose.yml)', value: 'docker', checked: true },
-            // ... other features
-        ],
-        when: (answers) => answers.stack === 'node-ts-express'
+      type: 'confirm',
+      name: 'addAuth',
+      message: 'Add JWT authentication boilerplate?',
+      default: true,
+      when: (answers) => answers.stack === 'node-ts-express'
     },
-     {
-      type: 'list',
-      name: 'stack',
-      message: 'Select the backend stack:',
+    {
+      type: 'confirm',
+      name: 'addSeeder',
+      message: 'Add a database seeder with sample data?',
+      default: true,
+      // Seeder only makes sense if there's an auth/user model to seed
+      when: (answers) => answers.stack === 'node-ts-express' && answers.addAuth
+    },
+    {
+      type: 'checkbox',
+      name: 'extraFeatures',
+      message: 'Select additional features for Node.js:',
       choices: [
-        { name: 'Node.js (TypeScript, Express)', value: 'node-ts-express' },
-        { name: 'C# (ASP.NET Core Web API)', value: 'dotnet-webapi' },
-        new inquirer.Separator(),
-        { name: 'Python (FastAPI) - Coming Soon', disabled: true, value: 'python-fastapi' },
-        { name: 'Java (Spring Boot)', value: 'java-spring' }, // <-- ENABLED!
+          { name: 'Docker Support (Dockerfile & docker-compose.yml)', value: 'docker', checked: true },
+          { name: 'API Testing Boilerplate (Jest & Supertest)', value: 'testing', checked: true },
+          { name: 'API Documentation (Swagger UI)', value: 'swagger', checked: true },
       ],
-    },
+      when: (answers) => answers.stack === 'node-ts-express'
+    }
   ]);
 
   const options = {
@@ -121,7 +90,7 @@ async function main() {
   try {
     console.log(chalk.blue(`\n✨ Starting backend generation for: ${chalk.bold(options.stack)}`));
 
-    // --- Dispatcher Logic ---
+    // --- Dispatcher Logic for ALL Stacks ---
     switch (options.stack) {
       case 'node-ts-express':
         await generateNodeProject(options);
@@ -131,10 +100,23 @@ async function main() {
         if (!await isCommandAvailable('dotnet')) {
           throw new Error('.NET SDK is not installed. Please install it from https://dotnet.microsoft.com/download');
         }
-        // Note: The dotnet generator currently only supports basic route generation (v1.0 features).
         await generateDotnetProject(options);
         break;
+
+      case 'java-spring':
+        if (!await isCommandAvailable('java')) {
+          throw new Error('Java (JDK 17 or newer) is not installed. Please install a JDK to continue.');
+        }
+        await generateJavaProject(options); 
+        break;
       
+      case 'python-fastapi':
+        if (!await isCommandAvailable('python')) {
+            throw new Error('Python is not installed. Please install Python (3.8+) and pip to continue.');
+        }
+        await generatePythonProject(options);
+        break;
+
       default:
         throw new Error(`The selected stack '${options.stack}' is not supported yet.`);
     }
@@ -146,7 +128,6 @@ async function main() {
 
   } catch (error) {
     console.error(chalk.red.bold('\n❌ An error occurred during generation:'));
-    // Make sure we print the full error for debugging
     console.error(error); 
     
     if (fs.existsSync(options.projectDir)) {
