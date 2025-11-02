@@ -1,0 +1,72 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
+from sqlalchemy.orm import Session
+from app.db import SessionLocal
+from pydantic import BaseModel
+
+# Build schema from fields
+<% if (schema && schema.fields) { %>
+class <%= modelName %>Base(BaseModel):
+<% schema.fields.forEach(f => { %>
+    <%= f.name %>: <%= f.type === 'Number' ? 'int' : 'str' %>
+<% }) %>
+
+class <%= modelName %>Create(<%= modelName %>Base):
+    pass
+
+class <%= modelName %>(<%= modelName %>Base):
+    id: int
+    class Config:
+        orm_mode = True
+<% } %>
+
+router = APIRouter(prefix="/api/<%= modelName.toLowerCase() %>s", tags=["<%= modelName %>s"])
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# NOTE: For brevity this uses a generic in-memory table replacement.
+# In a full implementation you'd generate SQLAlchemy model files per entity.
+
+_db = []
+_counter = 0
+
+@router.get("/", response_model=List[<%= modelName %>])
+def list_items():
+    return _db
+
+@router.post("/", response_model=<%= modelName %>, status_code=status.HTTP_201_CREATED)
+def create_item(payload: <%= modelName %>Create):
+    global _counter
+    _counter += 1
+    item = {"id": _counter, **payload.dict()}
+    _db.append(item)
+    return item
+
+@router.get("/{item_id}", response_model=<%= modelName %>)
+def get_item(item_id: int):
+    for it in _db:
+        if it["id"] == item_id:
+            return it
+    raise HTTPException(status_code=404, detail="Not found")
+
+@router.put("/{item_id}", response_model=<%= modelName %>)
+def update_item(item_id: int, payload: <%= modelName %>Create):
+    for idx, it in enumerate(_db):
+        if it["id"] == item_id:
+            new_it = {"id": item_id, **payload.dict()}
+            _db[idx] = new_it
+            return new_it
+    raise HTTPException(status_code=404, detail="Not found")
+
+@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item(item_id: int):
+    for idx, it in enumerate(_db):
+        if it["id"] == item_id:
+            _db.pop(idx)
+            return
+    raise HTTPException(status_code=404, detail="Not found")

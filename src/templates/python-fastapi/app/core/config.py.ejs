@@ -1,0 +1,8 @@
+from pydantic import BaseSettings
+
+class Settings(BaseSettings):
+    DB_URL: str = "postgresql://postgres:password@localhost:5432/<%= projectName %>"
+    JWT_SECRET: str = "change_me_super_secret"
+    JWT_EXPIRE_MINUTES: int = 300
+
+settings = Settings()

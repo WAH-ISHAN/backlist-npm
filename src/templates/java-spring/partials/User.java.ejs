@@ -6,10 +6,15 @@ import lombok.Data;
 
 @Data
 @Entity
-public class <%= modelName %> {
+@Table(name="users")
+public class User {
   @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  <% model.fields.forEach(f => { %>
-  private <%= f.type === 'Number' ? 'Integer' : (f.type === 'Boolean' ? 'Boolean' : 'String') %> <%= f.name %>;
-  <% }) %>
+
+  private String name;
+
+  @Column(unique = true)
+  private String email;
+
+  private String password;
 }

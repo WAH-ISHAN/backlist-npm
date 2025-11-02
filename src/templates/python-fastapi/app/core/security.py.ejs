@@ -1,0 +1,8 @@
+from datetime import datetime, timedelta
+from jose import jwt
+from app.core.config import settings
+
+def create_token(sub: str):
+    expire = datetime.utcnow() + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
+    payload = {"sub": sub, "exp": expire}
+    return jwt.encode(payload, settings.JWT_SECRET, algorithm="HS256")
