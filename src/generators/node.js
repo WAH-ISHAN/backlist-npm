@@ -1,6 +1,7 @@
 const chalk = require('chalk');
 const { execa } = require('execa');
 const fs = require('fs-extra');
+const ejs = require('ejs');
 const path = require('path');
 const { analyzeFrontend } = require('../analyzer');
 const { renderAndWrite, getTemplatePath } = require('./template');
