@@ -7,13 +7,18 @@ const { analyzeFrontend } = require('../analyzer');
 const { renderAndWrite, getTemplatePath } = require('./template');
 
 async function generateNodeProject(options) {
-  const { projectDir, projectName, dbType, addAuth, addSeeder, extraFeatures = [] } = options;
+  // v5.0: Destructure all new options
+  const { projectDir, projectName, frontendSrcDir, dbType, addAuth, addSeeder, extraFeatures = [] } = options;
   const port = 8000;
 
   try {
-    // --- Step 1: Analysis & Model Identification ---
+    // --- Step 1: Analyze Frontend ---
     console.log(chalk.blue('  -> Analyzing frontend for API endpoints...'));
-    const endpoints = await analyzeFrontend(options.frontendSrcDir);
+    const endpoints = await analyzeFrontend(frontendSrcDir);
+    if (endpoints.length > 0) console.log(chalk.green(`  -> Found ${endpoints.length} endpoints.`));
+    else console.log(chalk.yellow('  -> No API endpoints found. A basic project will be created.'));
+
+    // --- Step 2: Identify Models to Generate ---
     const modelsToGenerate = new Map();
     endpoints.forEach(ep => {
       if (ep.schemaFields && ep.controllerName !== 'Default' && !modelsToGenerate.has(ep.controllerName)) {
@@ -21,17 +26,18 @@ async function generateNodeProject(options) {
       }
     });
     if (addAuth && !modelsToGenerate.has('User')) {
+      console.log(chalk.yellow('  -> Authentication requires a "User" model. Creating a default one.'));
       modelsToGenerate.set('User', { name: 'User', fields: [{ name: 'name', type: 'String' }, { name: 'email', type: 'String', isUnique: true }, { name: 'password', type: 'String' }] });
     }
-    
-    // --- Step 2: Base Scaffolding ---
+
+    // --- Step 3: Base Scaffolding ---
     console.log(chalk.blue('  -> Scaffolding Node.js project...'));
     const destSrcDir = path.join(projectDir, 'src');
     await fs.ensureDir(destSrcDir);
     await fs.copy(getTemplatePath('node-ts-express/base/server.ts'), path.join(destSrcDir, 'server.ts'));
     await fs.copy(getTemplatePath('node-ts-express/base/tsconfig.json'), path.join(projectDir, 'tsconfig.json'));
     
-    // --- Step 3: Prepare package.json ---
+    // --- Step 4: Prepare and Write package.json ---
     const packageJsonContent = JSON.parse(await ejs.renderFile(getTemplatePath('node-ts-express/partials/package.json.ejs'), { projectName }));
     
     if (dbType === 'mongoose') packageJsonContent.dependencies['mongoose'] = '^7.6.3';
@@ -49,8 +55,8 @@ async function generateNodeProject(options) {
     if (addSeeder) {
       packageJsonContent.devDependencies['@faker-js/faker'] = '^8.3.1';
       if (!packageJsonContent.dependencies['chalk']) packageJsonContent.dependencies['chalk'] = '^4.1.2';
-      packageJsonContent.scripts['seed'] = 'ts-node scripts/seeder.ts';
-      packageJsonContent.scripts['destroy'] = 'ts-node scripts/seeder.ts -d';
+      packageJsonContent.scripts['seed'] = `ts-node scripts/seeder.ts`;
+      packageJsonContent.scripts['destroy'] = `ts-node scripts/seeder.ts -d`;
     }
     if (extraFeatures.includes('testing')) {
       packageJsonContent.devDependencies['jest'] = '^29.7.0';
@@ -67,7 +73,7 @@ async function generateNodeProject(options) {
     }
     await fs.writeJson(path.join(projectDir, 'package.json'), packageJsonContent, { spaces: 2 });
     
-    // --- Step 4: Generate DB-specific files & Controllers ---
+    // --- Step 5: Generate DB-specific files & Controllers ---
     if (modelsToGenerate.size > 0) {
         await fs.ensureDir(path.join(destSrcDir, 'controllers'));
         if (dbType === 'mongoose') {
@@ -82,7 +88,6 @@ async function generateNodeProject(options) {
             await fs.ensureDir(path.join(projectDir, 'prisma'));
             await renderAndWrite(getTemplatePath('node-ts-express/partials/PrismaSchema.prisma.ejs'), path.join(projectDir, 'prisma', 'schema.prisma'), { modelsToGenerate: Array.from(modelsToGenerate.values()) });
         }
-        // Generate controllers for both DB types
         console.log(chalk.blue('  -> Generating controllers...'));
         for (const [modelName] of modelsToGenerate.entries()) {
             const templateFile = dbType === 'mongoose' ? 'Controller.ts.ejs' : 'PrismaController.ts.ejs';
@@ -90,7 +95,7 @@ async function generateNodeProject(options) {
         }
     }
     
-    // --- Step 5: Generate Auth, Seeder, and Extra Features ---
+    // --- Step 6: Generate Authentication Boilerplate ---
     if (addAuth) {
         console.log(chalk.blue('  -> Generating authentication boilerplate...'));
         await fs.ensureDir(path.join(destSrcDir, 'routes'));
@@ -112,12 +117,34 @@ async function generateNodeProject(options) {
             }
         }
     }
-    if (addSeeder) { /* ... Seeder logic as before ... */ }
-    if (extraFeatures.includes('docker')) { /* ... Docker logic as before ... */ }
-    if (extraFeatures.includes('swagger')) { /* ... Swagger logic as before ... */ }
-    if (extraFeatures.includes('testing')) { /* ... Testing logic as before ... */ }
 
-    // --- Step 6: Generate Main Route File & Inject Logic into Server ---
+    // --- Step 7: Generate Seeder Script ---
+    if (addSeeder) {
+      console.log(chalk.blue('  -> Generating database seeder script...'));
+      await fs.ensureDir(path.join(projectDir, 'scripts'));
+      await renderAndWrite(getTemplatePath('node-ts-express/partials/Seeder.ts.ejs'), path.join(projectDir, 'scripts', 'seeder.ts'), { projectName });
+    }
+
+    // --- Step 8: Generate Extra Features ---
+    if (extraFeatures.includes('docker')) {
+      console.log(chalk.blue('  -> Generating Docker files...'));
+      await renderAndWrite(getTemplatePath('node-ts-express/partials/Dockerfile.ejs'), path.join(projectDir, 'Dockerfile'), { dbType, port });
+      await renderAndWrite(getTemplatePath('node-ts-express/partials/docker-compose.yml.ejs'), path.join(projectDir, 'docker-compose.yml'), { projectName, dbType, port });
+    }
+    if (extraFeatures.includes('swagger')) {
+      console.log(chalk.blue('  -> Generating API documentation setup...'));
+      await fs.ensureDir(path.join(destSrcDir, 'utils'));
+      await renderAndWrite(getTemplatePath('node-ts-express/partials/ApiDocs.ts.ejs'), path.join(destSrcDir, 'utils', 'swagger.ts'), { projectName, port });
+    }
+    if (extraFeatures.includes('testing')) {
+      console.log(chalk.blue('  -> Generating testing boilerplate...'));
+      const jestConfig = `/** @type {import('ts-jest').JestConfigWithTsJest} */\nmodule.exports = {\n  preset: 'ts-jest',\n  testEnvironment: 'node',\n  verbose: true,\n};`;
+      await fs.writeFile(path.join(projectDir, 'jest.config.js'), jestConfig);
+      await fs.ensureDir(path.join(projectDir, 'src', '__tests__'));
+      await renderAndWrite(getTemplatePath('node-ts-express/partials/App.test.ts.ejs'), path.join(projectDir, 'src', '__tests__', 'api.test.ts'), { addAuth });
+    }
+
+    // --- Step 9: Generate Main Route File & Inject Logic into Server ---
     await renderAndWrite(getTemplatePath('node-ts-express/partials/routes.ts.ejs'), path.join(destSrcDir, 'routes.ts'), { endpoints, addAuth, dbType });
     
     let serverFileContent = await fs.readFile(path.join(destSrcDir, 'server.ts'), 'utf-8');
@@ -143,17 +170,27 @@ async function generateNodeProject(options) {
     serverFileContent = serverFileContent.replace(listenRegex, `${swaggerInjector}\n$1`);
     await fs.writeFile(path.join(destSrcDir, 'server.ts'), serverFileContent);
 
-    // --- Step 7: Install Dependencies & Post-install ---
-    console.log(chalk.magenta('  -> Installing dependencies...'));
+    // --- Step 10: Install Dependencies & Run Post-install Scripts ---
+    console.log(chalk.magenta('  -> Installing dependencies... This may take a moment.'));
     await execa('npm', ['install'], { cwd: projectDir });
     if (dbType === 'prisma') {
       console.log(chalk.blue('  -> Running `prisma generate`...'));
       await execa('npx', ['prisma', 'generate'], { cwd: projectDir });
     }
     
-    // --- Step 8: Generate Final Files (.env.example) ---
-    // ... logic as before ...
-
+    // --- Step 11: Generate Final Files (.env.example) ---
+    let envContent = `PORT=${port}\n`;
+    if (dbType === 'mongoose') {
+        envContent += `MONGO_URI=mongodb://root:example@db:27017/${projectName}?authSource=admin\n`;
+    } else if (dbType === 'prisma') {
+        envContent += `DATABASE_URL="postgresql://user:password@db:5432/${projectName}?schema=public"\n`;
+    }
+    if (addAuth) envContent += `JWT_SECRET=your_super_secret_jwt_key_12345\n`;
+    if (extraFeatures.includes('docker')) {
+        envContent += `\n# Docker-compose credentials (used in docker-compose.yml)\nDB_USER=user\nDB_PASSWORD=password\nDB_NAME=${projectName}`;
+    }
+    await fs.writeFile(path.join(projectDir, '.env.example'), envContent);
+    
   } catch (error) {
     throw error;
   }
