@@ -85,15 +85,22 @@ async function generateNodeProject(options) {
         console.log(chalk.yellow('  -> No API endpoints found. A basic project will be created.'));
     }
 
-    // --- Step 2: Identify Models to Generate ---
+   // --- Step 2: Identify Models to Generate ---
     const modelsToGenerate = new Map();
     endpoints.forEach(ep => {
-      // Default saha Auth walata Model hadanna ona na (Auth ekata User Model eka yatin hadanawa)
-      // ep.controllerName dan hariyatama 'Users' kiyala enawa, 'V1' enne na.
-      if (ep.schemaFields && ep.controllerName !== 'Default' && ep.controllerName !== 'Auth' && !modelsToGenerate.has(ep.controllerName)) {
+      // 🔥 FIX: 'ep.schemaFields' තිබ්බත් නැතත් Controller එක හදන්න ඕන.
+      // නැත්නම් Routes Import එකේදි Error එනවා.
+      if (ep.controllerName !== 'Default' && ep.controllerName !== 'Auth' && !modelsToGenerate.has(ep.controllerName)) {
+        
+        // Schema Fields නැත්නම් හිස් Array එකක් ගන්න
+        let fields = [];
+        if (ep.schemaFields) {
+            fields = Object.entries(ep.schemaFields).map(([key, type]) => ({ name: key, type, isUnique: key === 'email' }));
+        }
+
         modelsToGenerate.set(ep.controllerName, { 
             name: ep.controllerName, 
-            fields: Object.entries(ep.schemaFields).map(([key, type]) => ({ name: key, type, isUnique: key === 'email' })) 
+            fields: fields
         });
       }
     });
