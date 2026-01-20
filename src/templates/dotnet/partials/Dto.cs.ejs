@@ -1,0 +1,8 @@
+namespace <%= projectName %>.Models.DTOs;
+
+public class <%= model.name %>
+{
+<% for (const [name, type] of Object.entries(model.fields || {})) { -%>
+    public <%= mapCSharpType(type) %> <%= pascal(name) %> { get; set; }
+<% } -%>
+}

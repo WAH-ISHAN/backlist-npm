@@ -5,26 +5,54 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
 @Service
 public class JwtService {
-  private final Key key = Keys.hmacShaKeyFor(System.getenv("JWT_SECRET") != null
-          ? System.getenv("JWT_SECRET").getBytes()
-          : "change_this_dev_secret_change_this_dev_secret".getBytes());
 
-  public String generateToken(String userId) {
+  private final Key key;
+  private final long expirationMs;
+
+  public JwtService() {
+    String secret = System.getenv("JWT_SECRET");
+    if (secret == null || secret.trim().length() < 32) {
+      // Must be >= 32 chars for HS256 keys (jjwt enforces minimum)
+      secret = "change_this_dev_secret_change_this_dev_secret";
+    }
+    this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+
+    String exp = System.getenv("JWT_EXPIRES_MS");
+    long fallback = 1000L * 60 * 60 * 5; // 5 hours
+    this.expirationMs = (exp != null) ? parseLongSafe(exp, fallback) : fallback;
+  }
+
+  public String generateToken(String subject) {
+    Date now = new Date();
+    Date exp = new Date(now.getTime() + expirationMs);
+
     return Jwts.builder()
-      .setSubject(userId)
-      .setIssuedAt(new Date())
-      .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 5))
+      .setSubject(subject)
+      .setIssuedAt(now)
+      .setExpiration(exp)
       .signWith(key, SignatureAlgorithm.HS256)
       .compact();
   }
 
-  public String validateAndGetSubject(String token) {
-    return Jwts.parserBuilder().setSigningKey(key).build()
-      .parseClaimsJws(token).getBody().getSubject();
+  /**
+   * @throws JwtException if token invalid/expired
+   */
+  public String validateAndGetSubject(String token) throws JwtException {
+    return Jwts.parserBuilder()
+      .setSigningKey(key)
+      .build()
+      .parseClaimsJws(token)
+      .getBody()
+      .getSubject();
+  }
+
+  private long parseLongSafe(String v, long fallback) {
+    try { return Long.parseLong(v); } catch (Exception e) { return fallback; }
   }
 }

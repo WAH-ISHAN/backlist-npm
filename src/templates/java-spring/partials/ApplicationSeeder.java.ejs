@@ -4,22 +4,27 @@ package <%= group %>.<%= projectName %>;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import <%= group %>.<%= projectName %>.model.User;
 import <%= group %>.<%= projectName %>.repository.UserRepository;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class ApplicationSeeder {
+
   @Bean
   CommandLineRunner seed(UserRepository userRepository, PasswordEncoder encoder) {
     return args -> {
-      if (userRepository.findByEmail("admin@example.com").isEmpty()) {
+      userRepository.findByEmail("admin@example.com").ifPresentOrElse(u -> {
+        // already exists
+      }, () -> {
         User admin = new User();
         admin.setName("Admin");
         admin.setEmail("admin@example.com");
         admin.setPassword(encoder.encode("admin123"));
         userRepository.save(admin);
-      }
+      });
     };
   }
 }

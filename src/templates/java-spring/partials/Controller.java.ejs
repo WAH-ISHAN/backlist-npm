@@ -4,23 +4,32 @@ package <%= group %>.<%= projectName %>.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.Optional;
+
 import <%= group %>.<%= projectName %>.service.<%= controllerName %>Service;
 import <%= group %>.<%= projectName %>.model.<%= controllerName %>;
 
 @RestController
-@RequestMapping("/api/<%= controllerName.toLowerCase() %>s")
+@RequestMapping("<%= basePath %>")
 @CrossOrigin(origins = "*")
 public class <%= controllerName %>Controller {
   private final <%= controllerName %>Service service;
-  public <%= controllerName %>Controller(<%= controllerName %>Service service) { this.service = service; }
 
-  @GetMapping public List<<%= controllerName %>> all() { return service.findAll(); }
+  public <%= controllerName %>Controller(<%= controllerName %>Service service) {
+    this.service = service;
+  }
+
+  @GetMapping
+  public List<<%= controllerName %>> all() {
+    return service.findAll();
+  }
 
   @GetMapping("/{id}")
   public ResponseEntity<<%= controllerName %>> one(@PathVariable Long id) {
-    return service.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    return service.findById(id)
+      .map(ResponseEntity::ok)
+      .orElse(ResponseEntity.notFound().build());
   }
 
   @PostMapping
@@ -30,7 +39,9 @@ public class <%= controllerName %>Controller {
 
   @PutMapping("/{id}")
   public ResponseEntity<<%= controllerName %>> update(@PathVariable Long id, @RequestBody <%= controllerName %> m) {
-    return service.update(id, m).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    return service.update(id, m)
+      .map(ResponseEntity::ok)
+      .orElse(ResponseEntity.notFound().build());
   }
 
   @DeleteMapping("/{id}")

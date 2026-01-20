@@ -3,7 +3,16 @@ package <%= group %>.<%= projectName %>.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
 import <%= group %>.<%= projectName %>.model.<%= modelName %>;
 
 @Repository
-public interface <%= modelName %>Repository extends JpaRepository<<%= modelName %>, Long> {}
+public interface <%= modelName %>Repository extends JpaRepository<<%= modelName %>, Long> {
+
+<%
+// If generator passes `extraFinders: [{name:'Email', type:'String'}]`
+(extraFinders || []).forEach(f => {
+-%>
+  java.util.Optional<<%= modelName %>> findBy<%= f.name %>(<%= f.type %> <%= f.name.charAt(0).toLowerCase() + f.name.slice(1) %>);
+<% }) -%>
+}

@@ -2,14 +2,24 @@
 package <%= group %>.<%= projectName %>.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
+@Table(name = "<%= modelName.toLowerCase() %>")
 public class <%= modelName %> {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  <% model.fields.forEach(f => { %>
-  private <%= f.type === 'Number' ? 'Integer' : (f.type === 'Boolean' ? 'Boolean' : 'String') %> <%= f.name %>;
-  <% }) %>
+
+<% model.fields.forEach(f => { -%>
+  private <%- (f.type === 'number' || f.type === 'Number') ? 'Double'
+        : (f.type === 'int' || f.type === 'Integer') ? 'Integer'
+        : (f.type === 'boolean' || f.type === 'Boolean') ? 'Boolean'
+        : (f.type === 'date' || f.type === 'Date') ? 'java.time.Instant'
+        : 'String' %> <%= f.name %>;
+<% }) -%>
 }

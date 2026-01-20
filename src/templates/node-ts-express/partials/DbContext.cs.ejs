@@ -8,8 +8,8 @@ namespace <%= projectName %>.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        <% modelsToGenerate.forEach(model => { %>
-        public DbSet<<%= model.name %>> <%= model.name %>s { get; set; }
-        <% }); %>
+<% modelsToGenerate.forEach(model => { -%>
+        public DbSet<<%= model.name %>> <%= model.name %> { get; set; } = default!;
+<% }); -%>
     }
 }

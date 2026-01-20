@@ -4,6 +4,7 @@ package <%= group %>.<%= projectName %>.controller;
 import <%= group %>.<%= projectName %>.model.User;
 import <%= group %>.<%= projectName %>.repository.UserRepository;
 import <%= group %>.<%= projectName %>.security.JwtService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,29 +22,41 @@ public class AuthController {
   private final JwtService jwt;
 
   public AuthController(UserRepository repo, PasswordEncoder encoder, JwtService jwt) {
-    this.repo = repo; this.encoder = encoder; this.jwt = jwt;
+    this.repo = repo;
+    this.encoder = encoder;
+    this.jwt = jwt;
   }
 
   @PostMapping("/register")
-  public ResponseEntity<?> register(@RequestBody User req) {
-    if (repo.findByEmail(req.getEmail()).isPresent()) {
+  public ResponseEntity<?> register(@RequestBody AuthRequest req) {
+    if (repo.findByEmail(req.email()).isPresent()) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User already exists");
     }
-    req.setPassword(encoder.encode(req.getPassword()));
-    repo.save(req);
-    String token = jwt.generateToken(req.getEmail());
+
+    User user = new User();
+    user.setName(req.name());
+    user.setEmail(req.email());
+    user.setPassword(encoder.encode(req.password()));
+    repo.save(user);
+
+    String token = jwt.generateToken(user.getEmail());
     return ResponseEntity.status(HttpStatus.CREATED).body(new TokenResponse(token));
   }
 
   @PostMapping("/login")
-  public ResponseEntity<?> login(@RequestBody User req) {
-    Optional<User> current = repo.findByEmail(req.getEmail());
+  public ResponseEntity<?> login(@RequestBody LoginRequest req) {
+    Optional<User> current = repo.findByEmail(req.email());
     if (current.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credentials");
-    if (!encoder.matches(req.getPassword(), current.get().getPassword()))
+
+    if (!encoder.matches(req.password(), current.get().getPassword())) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credentials");
-    String token = jwt.generateToken(req.getEmail());
+    }
+
+    String token = jwt.generateToken(current.get().getEmail());
     return ResponseEntity.ok(new TokenResponse(token));
   }
 
+  public record AuthRequest(String name, String email, String password) {}
+  public record LoginRequest(String email, String password) {}
   public record TokenResponse(String token) {}
 }
