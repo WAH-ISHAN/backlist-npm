@@ -228,31 +228,19 @@ async function generateNodeProject(options) {
     }
 
     // --- Step 9: Generate Main Route File & Inject Logic into Server ---
-    // IMPORTANT: 'endpoints' variable eka dan sanitized version eka.
-    await renderAndWrite(getTemplatePath('node-ts-express/partials/routes.ts.ejs'), path.join(destSrcDir, 'routes.ts'), { endpoints, addAuth, dbType });
+    
+    // 🔥 FIX: Auth Endpoints ටික routes.ts එකට යවන්න එපා. 
+    // මොකද ඒවා Auth.routes.ts එකෙන් වෙනම හැන්ඩ්ල් වෙනවා.
+    const nonAuthEndpoints = endpoints.filter(ep => ep.controllerName !== 'Auth');
+
+    // IMPORTANT: Pass 'nonAuthEndpoints' instead of 'endpoints'
+    await renderAndWrite(
+        getTemplatePath('node-ts-express/partials/routes.ts.ejs'), 
+        path.join(destSrcDir, 'routes.ts'), 
+        { endpoints: nonAuthEndpoints, addAuth, dbType } 
+    );
     
     let serverFileContent = await fs.readFile(path.join(destSrcDir, 'server.ts'), 'utf-8');
-    let dbConnectionCode = '', swaggerInjector = '', authRoutesInjector = '';
-
-    if (dbType === 'mongoose') {
-        dbConnectionCode = `\n// --- Database Connection ---\nimport mongoose from 'mongoose';\nconst MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/${projectName}';\nmongoose.connect(MONGO_URI).then(() => console.log('MongoDB Connected...')).catch(err => console.error(err));\n// -------------------------\n`;
-    } else if (dbType === 'prisma') {
-        dbConnectionCode = `\nimport { PrismaClient } from '@prisma/client';\nexport const prisma = new PrismaClient();\n`;
-    }
-    if (extraFeatures.includes('swagger')) {
-        swaggerInjector = `\nimport { setupSwagger } from './utils/swagger';\nsetupSwagger(app);\n`;
-    }
-    if (addAuth) {
-        authRoutesInjector = `import authRoutes from './routes/Auth.routes';\napp.use('/api/auth', authRoutes);\n\n`;
-    }
-
-    serverFileContent = serverFileContent
-      .replace("dotenv.config();", `dotenv.config();${dbConnectionCode}`)
-      .replace('// INJECT:ROUTES', `${authRoutesInjector}import apiRoutes from './routes';\napp.use('/api', apiRoutes);`);
-      
-    const listenRegex = /(app\.listen\()/;
-    serverFileContent = serverFileContent.replace(listenRegex, `${swaggerInjector}\n$1`);
-    await fs.writeFile(path.join(destSrcDir, 'server.ts'), serverFileContent);
 
     // --- Step 10: Install Dependencies & Run Post-install Scripts ---
     console.log(chalk.magenta('  -> Installing dependencies... This may take a moment.'));
