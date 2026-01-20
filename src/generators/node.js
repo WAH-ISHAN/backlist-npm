@@ -14,17 +14,90 @@ async function generateNodeProject(options) {
   try {
     // --- Step 1: Analyze Frontend ---
     console.log(chalk.blue('  -> Analyzing frontend for API endpoints...'));
-    const endpoints = await analyzeFrontend(frontendSrcDir);
-    if (endpoints.length > 0) console.log(chalk.green(`  -> Found ${endpoints.length} endpoints.`));
-    else console.log(chalk.yellow('  -> No API endpoints found. A basic project will be created.'));
+    
+    // NOTE: 'let' use kala api endpoints wenas karana nisa
+    let endpoints = await analyzeFrontend(frontendSrcDir);
+
+    if (endpoints.length > 0) {
+        console.log(chalk.green(`  -> Found ${endpoints.length} endpoints.`));
+        
+        // ============================================================
+        // 🔥 FIX START: Sanitizing Endpoints Logic
+        // ============================================================
+        endpoints = endpoints.map(ep => {
+            // 1. Path eka sudda kirima (/api/v1/users -> ['users'])
+            // 'api', 'v1', histhan ain karanawa
+            const parts = ep.path.split('/').filter(part => part !== '' && part !== 'api' && part !== 'v1');
+            
+            // Resource eka hoyaganeema (e.g., 'users')
+            let resource = parts[0] || 'Default';
+            
+            // 2. Controller Name eka hadeema (CamelCase: 'users' -> 'Users')
+            // Special Case: resource eka 'auth' nam Controller eka 'Auth'
+            // 'V1' kiyana eka ain wenne methanin
+            let controllerName = resource.charAt(0).toUpperCase() + resource.slice(1);
+            
+            // 3. Function Names hariyatama map kirima
+            let functionName = '';
+
+            // --- AUTH LOGIC ---
+            if (controllerName.toLowerCase() === 'auth') {
+                if (ep.path.includes('login')) functionName = 'loginUser';
+                else if (ep.path.includes('register')) functionName = 'registerUser';
+                else functionName = 'authAction'; // fallback
+            } 
+            // --- GENERAL RESOURCES LOGIC ---
+            else {
+                // Singular/Plural logic to avoid 'Userss'
+                const singularName = resource.endsWith('s') ? resource.slice(0, -1) : resource;
+                const pluralName = resource.endsWith('s') ? resource : resource + 's';
+                
+                const pascalSingular = singularName.charAt(0).toUpperCase() + singularName.slice(1);
+                const pascalPlural = pluralName.charAt(0).toUpperCase() + pluralName.slice(1);
+
+                if (ep.method === 'GET') {
+                    if (ep.path.includes(':id')) functionName = `get${pascalSingular}ById`;
+                    else functionName = `getAll${pascalPlural}`; // Fixes 'getAllUserss'
+                } else if (ep.method === 'POST') {
+                    functionName = `create${pascalSingular}`;
+                } else if (ep.method === 'PUT') {
+                    functionName = `update${pascalSingular}ById`;
+                } else if (ep.method === 'DELETE') {
+                    functionName = `delete${pascalSingular}ById`;
+                } else {
+                    functionName = `${ep.method.toLowerCase()}${pascalPlural}`;
+                }
+            }
+
+            // Update the endpoint object
+            // meka ejs file ekedi <%= ep.functionName %> kiyala use karanna puluwan
+            return { 
+                ...ep, 
+                controllerName, 
+                functionName 
+            };
+        });
+        // ============================================================
+        // 🔥 FIX END
+        // ============================================================
+
+    } else {
+        console.log(chalk.yellow('  -> No API endpoints found. A basic project will be created.'));
+    }
 
     // --- Step 2: Identify Models to Generate ---
     const modelsToGenerate = new Map();
     endpoints.forEach(ep => {
-      if (ep.schemaFields && ep.controllerName !== 'Default' && !modelsToGenerate.has(ep.controllerName)) {
-        modelsToGenerate.set(ep.controllerName, { name: ep.controllerName, fields: Object.entries(ep.schemaFields).map(([key, type]) => ({ name: key, type, isUnique: key === 'email' })) });
+      // Default saha Auth walata Model hadanna ona na (Auth ekata User Model eka yatin hadanawa)
+      // ep.controllerName dan hariyatama 'Users' kiyala enawa, 'V1' enne na.
+      if (ep.schemaFields && ep.controllerName !== 'Default' && ep.controllerName !== 'Auth' && !modelsToGenerate.has(ep.controllerName)) {
+        modelsToGenerate.set(ep.controllerName, { 
+            name: ep.controllerName, 
+            fields: Object.entries(ep.schemaFields).map(([key, type]) => ({ name: key, type, isUnique: key === 'email' })) 
+        });
       }
     });
+
     if (addAuth && !modelsToGenerate.has('User')) {
       console.log(chalk.yellow('  -> Authentication requires a "User" model. Creating a default one.'));
       modelsToGenerate.set('User', { name: 'User', fields: [{ name: 'name', type: 'String' }, { name: 'email', type: 'String', isUnique: true }, { name: 'password', type: 'String' }] });
@@ -91,7 +164,10 @@ async function generateNodeProject(options) {
         console.log(chalk.blue('  -> Generating controllers...'));
         for (const [modelName] of modelsToGenerate.entries()) {
             const templateFile = dbType === 'mongoose' ? 'Controller.ts.ejs' : 'PrismaController.ts.ejs';
-            await renderAndWrite(getTemplatePath(`node-ts-express/partials/${templateFile}`), path.join(destSrcDir, 'controllers', `${modelName}.controller.ts`), { modelName, projectName });
+            // Controller hadaddi Auth eka skip karanawa (mokada eka yatin wenama hadanawa)
+            if (modelName !== 'Auth') {
+                await renderAndWrite(getTemplatePath(`node-ts-express/partials/${templateFile}`), path.join(destSrcDir, 'controllers', `${modelName}.controller.ts`), { modelName, projectName });
+            }
         }
     }
     
@@ -145,6 +221,7 @@ async function generateNodeProject(options) {
     }
 
     // --- Step 9: Generate Main Route File & Inject Logic into Server ---
+    // IMPORTANT: 'endpoints' variable eka dan sanitized version eka.
     await renderAndWrite(getTemplatePath('node-ts-express/partials/routes.ts.ejs'), path.join(destSrcDir, 'routes.ts'), { endpoints, addAuth, dbType });
     
     let serverFileContent = await fs.readFile(path.join(destSrcDir, 'server.ts'), 'utf-8');
