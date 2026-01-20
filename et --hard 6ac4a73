@@ -1,0 +1,45 @@
+[33mac494c4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m 6.0.6
+[33m2295ab3[m 6.0.5
+[33m7e052c5[m 6.0.4
+[33m8741b98[m new 1
+[33m8f37a76[m Merge pull request #2 from WAH-ISHAN/dev1
+[33m6a4bfef[m[33m ([m[1;31morigin/dev1[m[33m, [m[1;32mdev1[m[33m)[m new
+[33m6cdc9ca[m v6.0.3
+[33m9fb0705[m Merge pull request #1 from WAH-ISHAN/dev1
+[33me915609[m v6.0.1
+[33m73bd7bb[m[33m ([m[1;32mdev2[m[33m)[m Add files via upload
+[33m1e2ba24[m Delete _includes/head.html
+[33m33bbb7a[m Update Google site verification meta tag
+[33m00a83c8[m Update Jekyll workflow for GitHub Pages deployment
+[33m8214e7c[m Add Google site verification meta tag
+[33mabe3ccd[m Add title to configuration file
+[33m6ac4a73[m 6.0.0 verstion
+[33mbbf2550[m 6.0.0
+[33mcfe63c0[m 5.0.7
+[33m5694f09[m 5.0.6
+[33m45044b8[m 5.0.5
+[33m9b4f60d[m 5.0.4
+[33m8eb71de[m 5.0.3
+[33mdb724fe[m 5.0.2
+[33m51ac4dd[m "version": "5.0.1",
+[33mbda0e2b[m "version": "5.0.0",
+[33m428cbdb[m "version": "4.0.0"
+[33m866671b[m 3.0.1
+[33m4f2ed2b[m version": "3
+[33m06d5126[m node update
+[33m73ce59c[m Merge branch 'main' of https://github.com/WAH-ISHAN/backlist-npm
+[33m18e704b[m "version": "2.0.0"
+[33m035dadc[m Revise README for clarity and feature updates
+[33mfc7af07[m Update acknowledgements section in README.md
+[33m6a7cb1d[m Create LICENSE
+[33m76247b9[m Create README.md
+[33m03bd244[m bugfix
+[33m17a0f2c[m  "version": "1.3.2"
+[33m08fa4c0[m bugfix
+[33mcb02edf[m author change
+[33m68771a0[m "version": "1.3.1",
+[33m0dfd4d4[m bugfix
+[33mf24d18a[m verstion update2
+[33ma960714[m 1.3.0
+[33mf385771[m verstion update
+[33m0a2a40f[m first commit
