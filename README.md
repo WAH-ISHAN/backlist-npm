@@ -1,113 +1,109 @@
 
+# 🚀 Create Backlist CLI
 
-# 🚀 Create Backlist
+[![NPM Version](https://img.shields.io/npm/v/create-backlist.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/create-backlist)
+[![Downloads](https://img.shields.io/npm/dt/create-backlist.svg?style=flat-square&color=green)](https://www.npmjs.com/package/create-backlist)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=flat-square)](https://github.com/WAH-ISHAN/create-backlist/graphs/commit-activity)
 
-[![NPM Version](https://img.shields.io/npm/v/create-backlist.svg)](https://www.npmjs.com/package/create-backlist)
-[![Downloads](https://img.shields.io/npm/dt/create-backlist.svg)](https://www.npmjs.com/package/create-backlist)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+> **The World's First AST-Powered Polyglot Backend Generator.**
 
-> **The World's First Polyglot Backend Generator using AST Analysis.**
+Tired of manually coding backend boilerplate? **`create-backlist`** is an intelligent CLI tool that **Reverse Engineers** your frontend code to automatically generate production-ready backends in seconds.
 
-Tired of manually creating backend boilerplate? **`create-backlist`** is an intelligent CLI tool that **Reverse Engineers** your frontend code to automatically generate a production-ready backend.
-
-Unlike traditional scaffolders, it scans your `fetch` / `axios` calls using **Abstract Syntax Trees (AST)** and builds a custom backend with **Docker support** in seconds.
+Unlike traditional scaffolders that use templates, it scans your live code (like `axios` or `fetch` calls) using **Abstract Syntax Trees (AST)** to build custom, context-aware backends with built-in **Docker support**.
 
 ---
 
-## 🏗️ How It Works (The Architecture)
+## 🏗️ The Architecture (How It Works)
 
-`create-backlist` doesn't just copy-paste templates. It understands your code logic using a **3-Step Process**:
+We don't just copy-paste. We use a sophisticated **3-Stage Compilation Process** to understand your code's logic:
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffcc00', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#f4f4f4'}}}%%
 graph LR
-A[Frontend Code] -- AST Parsing --> B(Common JSON Intermediate)
-B -- Generation Engine --> C{Polyglot Output}
-C --> D[Node.js]
-C --> E[Python]
-C --> F[Java]
-C --> G[C# .NET]
+    subgraph Input [Stage 1: Analysis]
+        A[Frontend Code] -->|AST Parsing| B(Scanner Engine)
+    end
+    subgraph Core [Stage 2: Abstraction]
+        B -->|Extracts Logic| C{Intermediate JSON Bridge}
+    end
+    subgraph Output [Stage 3: Generation]
+        C -->|Transpiles| D[Node.js Generator]
+        C -->|Transpiles| E[Python Generator]
+        C -->|Transpiles| F[Java Generator]
+        C -->|Transpiles| G[C# .NET Generator]
+    end
+    style C fill:#ff9900,stroke:#333,stroke-width:2px,color:white
 
 ```
 
-1. **Scan:** Reads frontend API calls (Axios/Fetch).
-2. **Bridge:** Converts logic into a universal **JSON Intermediate Representation**.
-3. **Generate:** Compiles that JSON into the target language (Node, Python, Java, or C#).
+1. **Stage 1 (Analysis):** The engine scans your frontend source code and builds an Abstract Syntax Tree to understand API intent.
+2. **Stage 2 (Abstraction):** Extracted logic is converted into a universal **JSON Intermediate Representation (IR)** that acts as a "bridge" between languages.
+3. **Stage 3 (Generation):** Language-specific code generators read the JSON IR and compile it into production-ready code for your chosen stack.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features & Innovation
 
-* **🤖 AST-Powered Analysis:** Scans your frontend codebase (React, Vue, etc.) to detect API endpoints automatically.
-* **🌐 Polyglot Engine (Multi-Language):** Generate a backend in your preferred stack.
-* ✅ **Node.js** (TypeScript & Express) - *Production Ready*
-* 🚀 **Python** (FastAPI) - *Beta Support*
-* ☕ **Java** (Spring Boot) - *Beta Support*
-* 🔷 **C#** (ASP.NET Core) - *Beta Support*
+| Feature | Description |
+| --- | --- |
+| **🤖 AST-Powered Engine** | Uses advanced static analysis to detect endpoints dynamically, not just regex matching. |
+| **🌐 Polyglot Support** | One tool for multiple backend languages. <br>
 
+<br>✅ **Node.js (Express/TS)** - *Production Ready*<br>
 
-* **🐳 Auto-Dockerization:** Automatically generates `Dockerfile` and `docker-compose.yml` for instant deployment.
-* **🧠 Active Context Analysis:** Missed an endpoint? Just keep the file open in VS Code, and the tool will prioritize scanning your active window.
-* **⚡️ Zero-Configuration:** A single command handles everything from project scaffolding to dependency installation.
+<br>🚀 **Python (FastAPI)** - *Beta*<br>
+
+<br>☕ **Java (Spring Boot)** - *Beta*<br>
+
+<br>🔷 **C# (ASP.NET Core)** - *Beta* |
+| **🐳 Auto-Dockerization** | Instantly generates optimized `Dockerfile` and `docker-compose.yml` for zero-config deployment. |
+| **🧠 Active Context Analysis** | Smartly prioritizes scanning the file currently open in your VS Code editor for higher accuracy on complex files. |
+| **⚡ Zero-Config Boilerplate** | Generates controllers, routes, models, and configuration files automatically. |
 
 ---
 
-## 📦 Installation & Usage
+## 📦 Quick Start
 
-No global installation needed! Just run this command inside your existing frontend project's root directory:
+No global installation needed. Just run this command inside your existing frontend project's root:
 
 ```bash
 npx create-backlist@latest
 
 ```
 
-The tool will guide you through an interactive setup:
+The interactive CLI will guide you:
 
-1. **Select your Target Language:** (Node.js, Python, Java, or C#)
-2. **Enter a name for your backend directory:** (default: `backend`)
+1. **Select your Target Language:** (e.g., Node.js, Python, Java...)
+2. **Name your backend folder:** (default: `backend`)
 3. **Sit back and watch the magic!** 🪄
 
 ---
 
-## 💡 Why `create-backlist`?
+## 🗺️ Roadmap & Research Goals
 
-| Feature | Traditional Generators | 🚀 Create Backlist |
-| --- | --- | --- |
-| **Method** | Static Templates (Copy-Paste) | **Dynamic AST Analysis** |
-| **Input** | User Inputs Manual Config | **Scans Existing Frontend Code** |
-| **Language** | Single Language Only | **4+ Languages (Polyglot)** |
-| **Docker** | Manual Setup | **Auto-Generated** |
+This tool is an ongoing research project aimed at automating software infrastructure.
 
----
-
-## 🗺️ Roadmap
-
-We are actively improving the engine to reach Enterprise Standards (v10 goal).
-
-* [x] **Multi-Language Support (JS, Python, Java, C#)**
-* [x] **Docker Support**
-* [ ] **Database ORM Generation:** Automatically create Prisma/TypeORM schemas based on request bodies.
-* [ ] **Authentication Boilerplate:** Auto-generate JWT auth flows.
-* [ ] **Cloud Deployment Scripts:** AWS/Azure setup scripts.
+* [x] **Phase 1: Core Engine** (AST Parsing & Node.js Support) - *Completed*
+* [x] **Phase 2: Polyglot Architecture** (Python, Java, C# Beta & Docker) - *Completed*
+* [ ] **Phase 3: Intelligent Data Modeling** (Auto-generate Prisma/TypeORM schemas from request bodies)
+* [ ] **Phase 4: Security Automation** (Auto-generate JWT auth and basic security headers)
 
 ---
 
-## 🛠️ Contributing
+## 🤝 Contributing & Feedback
 
-We welcome contributions! Especially if you are an expert in Java or C#, help us move those generators from **Beta** to **Production Ready**.
+This is an open-source project built for the developer community. We welcome contributions, especially for improving our Beta language generators!
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+* Found a bug? [Open an Issue](https://github.com/WAH-ISHAN/create-backlist/issues).
+* Want to contribute? [Submit a Pull Request](https://www.google.com/search?q=https://github.com/WAH-ISHAN/create-backlist/pulls).
 
-## 📄 License
-
-This project is licensed under the MIT License.
+Give us a ⭐ on GitHub if this saved you time!
 
 ---
 
-*Built with ❤️ by [W.A.H. ISHAN](https://github.com/WAH-ISHAN).*
+*Built with ❤️ for builders by [W.A.H. ISHAN](https://github.com/WAH-ISHAN).*
 
 ```
 
+---
