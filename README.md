@@ -16,7 +16,7 @@ Unlike traditional scaffolders that use templates, it scans your live code (like
 
 ## 🏗️ The Architecture (How It Works)
 
-We don't just copy-paste. We use a sophisticated **3-Stage Compilation Process** to understand your code's logic:
+We don't just copy-paste. We use a sophisticated **3-Stage Compilation Process** to understand your code's logic. This allows us to support multiple languages from a single source.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffcc00', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#f4f4f4'}}}%%
@@ -52,31 +52,91 @@ graph LR
 
 <br>✅ **Node.js (Express/TS)** - *Production Ready*<br>
 
-<br>🚀 **Python (FastAPI)** - *Beta*<br>
+<br>🚀 **Python (FastAPI)** - *Beta Support*<br>
 
-<br>☕ **Java (Spring Boot)** - *Beta*<br>
+<br>☕ **Java (Spring Boot)** - *Beta Support*<br>
 
-<br>🔷 **C# (ASP.NET Core)** - *Beta* |
+<br>🔷 **C# (ASP.NET Core)** - *Beta Support* |
 | **🐳 Auto-Dockerization** | Instantly generates optimized `Dockerfile` and `docker-compose.yml` for zero-config deployment. |
 | **🧠 Active Context Analysis** | Smartly prioritizes scanning the file currently open in your VS Code editor for higher accuracy on complex files. |
 | **⚡ Zero-Config Boilerplate** | Generates controllers, routes, models, and configuration files automatically. |
 
 ---
 
-## 📦 Quick Start
+## 📦 Installation & Usage
 
-No global installation needed. Just run this command inside your existing frontend project's root:
+You don't need to install anything globally. Just go to your frontend project folder and run:
 
 ```bash
 npx create-backlist@latest
 
 ```
 
-The interactive CLI will guide you:
+### 🚀 Step-by-Step Walkthrough
 
-1. **Select your Target Language:** (e.g., Node.js, Python, Java...)
-2. **Name your backend folder:** (default: `backend`)
-3. **Sit back and watch the magic!** 🪄
+Once you run the command, the interactive CLI will guide you through **3 Simple Steps**:
+
+#### 1️⃣ Select Your Backend Stack
+
+The tool will ask which language/framework you want to generate.
+
+```text
+? Select the backend stack:
+❯ Node.js (TypeScript, Express)  [Recommended]
+  Python (FastAPI)               [Beta]
+  Java (Spring Boot)             [Beta]
+  C# (.NET Core)                 [Beta]
+
+```
+
+#### 2️⃣ Name Your Backend
+
+Choose a folder name for your new backend.
+
+```text
+? Enter a name for your backend directory: (backend)
+
+```
+
+#### 3️⃣ Locate Source Code
+
+Tell the tool where your frontend code lives (usually `src` or `app`).
+
+```text
+? Enter the path to your frontend directory: (src)
+
+```
+
+---
+
+### 📂 Output Structure (Example)
+
+After running the tool, `create-backlist` generates a complete, structured backend tailored to your needs:
+
+```text
+backend/
+├── src/
+│   ├── controllers/      # Logic generated from your API calls
+│   ├── routes/           # Express/FastAPI/Spring routes
+│   ├── models/           # Data models
+│   └── server.ts         # Entry point
+├── Dockerfile            # 🐳 Auto-generated
+├── docker-compose.yml    # 🐳 Auto-generated
+├── package.json
+└── README.md
+
+```
+
+---
+
+## 💡 Why `create-backlist`?
+
+| Feature | Traditional Generators | 🚀 Create Backlist |
+| --- | --- | --- |
+| **Method** | Static Templates (Copy-Paste) | **Dynamic AST Analysis** |
+| **Input** | User Inputs Manual Config | **Scans Existing Frontend Code** |
+| **Language** | Single Language Only | **4+ Languages (Polyglot)** |
+| **Deployment** | Manual Docker Setup | **Auto-Generated Docker Files** |
 
 ---
 
@@ -85,7 +145,7 @@ The interactive CLI will guide you:
 This tool is an ongoing research project aimed at automating software infrastructure.
 
 * [x] **Phase 1: Core Engine** (AST Parsing & Node.js Support) - *Completed*
-* [x] **Phase 2: Polyglot Architecture** (Python, Java, C# Beta & Docker) - *Completed*
+* [x] **Phase 2: Polyglot Architecture** (Python, Java, C# Support & Docker) - *Completed*
 * [ ] **Phase 3: Intelligent Data Modeling** (Auto-generate Prisma/TypeORM schemas from request bodies)
 * [ ] **Phase 4: Security Automation** (Auto-generate JWT auth and basic security headers)
 
@@ -106,4 +166,4 @@ Give us a ⭐ on GitHub if this saved you time!
 
 ```
 
----
+```
