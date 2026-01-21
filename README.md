@@ -54,16 +54,16 @@ Our **3-Stage Compilation Process** ensures that one frontend codebase can gener
 ```mermaid
 graph LR
     subgraph Input [Stage 1: Analysis]
-        A[Frontend Files] -->|AST Parsing| B(Scanner Engine)
+        A["Frontend Files"] -->|AST Parsing| B("Scanner Engine")
     end
     subgraph Core [Stage 2: Abstraction]
-        B -->|Extracts Endpoints| C{Intermediate JSON Bridge}
+        B -->|Extracts Endpoints| C{"Intermediate JSON Bridge"}
     end
     subgraph Output [Stage 3: Generation]
-        C -->|Transpiles| D[Node.js (Express)]
-        C -->|Transpiles| E[Python (FastAPI)]
-        C -->|Transpiles| F[Java (Spring Boot)]
-        C -->|Transpiles| G[C# (.NET Core)]
+        C -->|Transpiles| D["Node.js (Express)"]
+        C -->|Transpiles| E["Python (FastAPI)"]
+        C -->|Transpiles| F["Java (Spring Boot)"]
+        C -->|Transpiles| G["C# (.NET Core)"]
     end
     style C fill:#ff9900,stroke:#333,stroke-width:2px,color:white
 
