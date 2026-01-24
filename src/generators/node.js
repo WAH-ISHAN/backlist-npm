@@ -12,7 +12,6 @@ function stripQuery(p) {
 }
 
 function safePascalName(name) {
-  // remove query + invalid filename chars, keep alphanumerics only
   const cleaned = String(name || "Default")
     .split("?")[0]
     .replace(/[^a-zA-Z0-9]/g, "");
@@ -25,10 +24,8 @@ function sanitizeEndpoints(endpoints) {
   if (!Array.isArray(endpoints)) return [];
 
   return endpoints.map((ep) => {
-    // IMPORTANT: strip query string so it never leaks into names
     const rawPath = stripQuery(ep.path || ep.route || "/");
 
-    // remove empty, api, and version segments (v1/v2/v10...)
     const parts = rawPath
       .split("/")
       .filter(Boolean)
@@ -39,7 +36,6 @@ function sanitizeEndpoints(endpoints) {
 
     let functionName = "";
 
-    // AUTH naming
     if (controllerName.toLowerCase() === "auth") {
       if (rawPath.includes("login")) functionName = "loginUser";
       else if (rawPath.includes("register")) functionName = "registerUser";
@@ -54,9 +50,9 @@ function sanitizeEndpoints(endpoints) {
       const method = String(ep.method || "GET").toUpperCase();
 
       const hasId =
-        rawPath.includes(":") || // :id style
-        rawPath.includes("{") || // {id} style
-        /\/\d+/.test(rawPath);   // numeric
+        rawPath.includes(":") || 
+        rawPath.includes("{") || 
+        /\/\d+/.test(rawPath);
 
       if (method === "GET") {
         functionName = hasId ? `get${pascalSingular}ById` : `getAll${pascalPlural}`;
@@ -71,7 +67,6 @@ function sanitizeEndpoints(endpoints) {
       }
     }
 
-    // return with clean path (query removed)
     return { ...ep, path: rawPath, controllerName, functionName };
   });
 }
@@ -107,7 +102,6 @@ async function generateNodeProject(options) {
 
     endpoints.forEach((ep) => {
       if (!ep) return;
-
       const ctrl = safePascalName(ep.controllerName);
       if (ctrl === "Default" || ctrl === "Auth") return;
 
@@ -263,7 +257,7 @@ async function generateNodeProject(options) {
       );
     }
 
-    // --- Step 8: Extras ---
+    // --- Step 8: Extras (FIXED) ---
     if (extraFeatures.includes("docker")) {
       console.log(chalk.blue("  -> Generating Docker files..."));
       await renderAndWrite(
@@ -281,10 +275,11 @@ async function generateNodeProject(options) {
     if (extraFeatures.includes("swagger")) {
       console.log(chalk.blue("  -> Generating API documentation setup..."));
       await fs.ensureDir(path.join(destSrcDir, "utils"));
+      // FIX: Added 'paths' to the EJS data object
       await renderAndWrite(
         getTemplatePath("node-ts-express/partials/ApiDocs.ts.ejs"),
         path.join(destSrcDir, "utils", "swagger.ts"),
-        { projectName, port, addAuth }
+        { projectName, port, addAuth, paths: endpoints }
       );
     }
 

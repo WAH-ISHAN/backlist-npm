@@ -68,7 +68,6 @@ async function appendApplicationProperties(projectDir, artifactId) {
 }
 
 function buildModelsFromEndpoints(endpoints) {
-  // Create models even when schemaFields is null (GET-only APIs).
   const modelsToGenerate = new Map();
 
   (Array.isArray(endpoints) ? endpoints : []).forEach((ep) => {
@@ -161,7 +160,6 @@ async function generateJavaProject(options) {
 
     const modelsToGenerate = buildModelsFromEndpoints(endpoints);
 
-    // Spring Initializr extracts into projectDir directly. Java package folder:
     const javaSrcRoot = path.join(
       projectDir,
       "src",
@@ -171,7 +169,6 @@ async function generateJavaProject(options) {
       artifactId.replace(/-/g, "")
     );
 
-    // Always ensure base package dirs exist
     await fs.ensureDir(javaSrcRoot);
 
     if (modelsToGenerate.size > 0) {
@@ -186,22 +183,23 @@ async function generateJavaProject(options) {
       await fs.ensureDir(controllerDir);
 
       for (const model of modelsToGenerate.values()) {
+        // FIXED: Added 'modelName: model.name' to satisfy the EJS template
         await renderAndWrite(
           getTemplatePath("java-spring/partials/Entity.java.ejs"),
           path.join(entityDir, `${model.name}.java`),
-          { projectName, groupId, artifactId, model }
+          { projectName, groupId, artifactId, group: groupId, model, modelName: model.name }
         );
 
         await renderAndWrite(
           getTemplatePath("java-spring/partials/Repository.java.ejs"),
           path.join(repoDir, `${model.name}Repository.java`),
-          { projectName, groupId, artifactId, model }
+          { projectName, groupId, artifactId, group: groupId, model, modelName: model.name }
         );
 
         await renderAndWrite(
           getTemplatePath("java-spring/partials/Controller.java.ejs"),
           path.join(controllerDir, `${model.name}Controller.java`),
-          { projectName, groupId, artifactId, model }
+          { projectName, groupId, artifactId, group: groupId, model, modelName: model.name }
         );
       }
     } else {
@@ -215,23 +213,10 @@ async function generateJavaProject(options) {
     console.log(chalk.cyan(`  cd ${path.basename(projectDir)}`));
     console.log(chalk.cyan("  ./mvnw spring-boot:run   # or use your IDE to run the Application class"));
   } catch (error) {
-    // Better Initializr error print
     if (error && error.response && error.response.status) {
       console.error(chalk.red(`  -> Initializr error status: ${error.response.status}`));
-
-      try {
-        if (error.response.data) {
-          let text = "";
-          for await (const chunk of error.response.data) text += chunk.toString();
-          console.error(chalk.yellow("  -> Initializr response body:"), text);
-        }
-      } catch {
-        // ignore
-      }
-
       throw new Error(`Failed to download from Spring Initializr. Status: ${error.response.status}`);
     }
-
     throw error;
   }
 }
