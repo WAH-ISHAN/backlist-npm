@@ -50,18 +50,18 @@ async function analyzeFrontend(srcPath) {
               return q.value.raw + (urlNode.expressions[i] ? `{${urlNode.expressions[i].name || 'id'}}` : '');
             }).join('');
           }
-          
+
           // Only process API calls that start with '/api/'
           if (!urlValue || !urlValue.startsWith('/api/')) return;
-          
+
           let method = 'GET';
           let schemaFields = null;
 
           const optionsNode = path.node.arguments[1];
-          if (optionsNode && optionsNode.type === 'ObjectExpression') {
+          if (optionsNode?.type === 'ObjectExpression') {
             // Find the HTTP method
             const methodProp = optionsNode.properties.find(p => p.key.name === 'method');
-            if (methodProp && methodProp.value.type === 'StringLiteral') {
+            if (methodProp?.value.type === 'StringLiteral') {
               method = methodProp.value.value.toUpperCase();
             }
 
@@ -70,7 +70,7 @@ async function analyzeFrontend(srcPath) {
               const bodyProp = optionsNode.properties.find(p => p.key.name === 'body');
               
               // Check if body is wrapped in JSON.stringify
-              if (bodyProp && bodyProp.value.callee && bodyProp.value.callee.name === 'JSON.stringify') {
+              if (bodyProp?.value.callee?.name === 'JSON.stringify') {
                 const dataObjectNode = bodyProp.value.arguments[0];
 
                 // This is a simplified analysis assuming the object is defined inline.
