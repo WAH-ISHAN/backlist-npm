@@ -150,7 +150,7 @@ async function generateJavaProject(options) {
             return buf;
           })());
           console.error(chalk.yellow('  -> Initializr response body:'), text);
-        } catch {}
+        } catch { /* empty */ }
       throw new Error(`Failed to download from Spring Initializr. Status: ${error.response.status}`);
     }
     throw error;
