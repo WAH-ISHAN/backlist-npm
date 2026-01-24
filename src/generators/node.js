@@ -35,7 +35,7 @@ async function generateNodeProject (options) {
         // 2. Controller Name eka hadeema (CamelCase: 'users' -> 'Users')
         // Special Case: resource eka 'auth' nam Controller eka 'Auth'
         // 'V1' kiyana eka ain wenne methanin
-        const controllerName = resource.charAt(0).toUpperCase() + resource.slice(1)
+        const controllerName = `${resource.charAt(0).toUpperCase()}${resource.slice(1)}`
 
         // 3. Function Names hariyatama map kirima
         let functionName = ''
@@ -50,10 +50,10 @@ async function generateNodeProject (options) {
         else {
           // Singular/Plural logic to avoid 'Userss'
           const singularName = resource.endsWith('s') ? resource.slice(0, -1) : resource
-          const pluralName = resource.endsWith('s') ? resource : resource + 's'
+          const pluralName = resource.endsWith('s') ? resource : `${resource}s`
 
-          const pascalSingular = singularName.charAt(0).toUpperCase() + singularName.slice(1)
-          const pascalPlural = pluralName.charAt(0).toUpperCase() + pluralName.slice(1)
+          const pascalSingular = `${singularName.charAt(0).toUpperCase()}${singularName.slice(1)}`
+          const pascalPlural = `${pluralName.charAt(0).toUpperCase()}${pluralName.slice(1)}`
 
           if (ep.method === 'GET') {
             if (ep.path.includes(':id')) functionName = `get${pascalSingular}ById`
