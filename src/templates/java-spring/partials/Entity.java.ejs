@@ -4,12 +4,37 @@ package <%= group %>.<%= projectName %>.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.Instant;
+
 @Data
 @Entity
+@Table(name = "<%= modelName.toLowerCase() %>")
 public class <%= modelName %> {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  <% model.fields.forEach(f => { %>
-  private <%= f.type === 'Number' ? 'Integer' : (f.type === 'Boolean' ? 'Boolean' : 'String') %> <%= f.name %>;
+
+  <% model.fields.forEach(f => { 
+      const n = String(f.name || '').toLowerCase();
+      let t = 'String';
+      if (f.type === 'Number') t = 'Integer';
+      if (f.type === 'Boolean') t = 'Boolean';
+      // heuristic: money-like fields -> BigDecimal
+      if (f.type === 'Number' && (n.includes('price') || n.includes('amount') || n.includes('total'))) t = 'java.math.BigDecimal';
+  %>
+  @Column(name = "<%= f.name %>"<% if (f.isUnique) { %>, unique = true<% } %><% if (n.includes('email')) { %>, nullable = false<% } %>)
+  private <%= t %> <%= f.name %>;
   <% }) %>
+
+  @Column(nullable = false, updatable = false)
+  private Instant createdAt = Instant.now();
+
+  @Column(nullable = false)
+  private Instant updatedAt = Instant.now();
+
+  @PreUpdate
+  public void onUpdate() {
+    this.updatedAt = Instant.now();
+  }
 }

@@ -4,37 +4,51 @@ package <%= group %>.<%= projectName %>.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.Optional;
+
 import <%= group %>.<%= projectName %>.service.<%= controllerName %>Service;
 import <%= group %>.<%= projectName %>.model.<%= controllerName %>;
 
 @RestController
-@RequestMapping("/api/<%= controllerName.toLowerCase() %>s")
+@RequestMapping("/api/<%= controllerName.toLowerCase() %>")
 @CrossOrigin(origins = "*")
 public class <%= controllerName %>Controller {
-  private final <%= controllerName %>Service service;
-  public <%= controllerName %>Controller(<%= controllerName %>Service service) { this.service = service; }
 
-  @GetMapping public List<<%= controllerName %>> all() { return service.findAll(); }
+  private final <%= controllerName %>Service service;
+
+  public <%= controllerName %>Controller(<%= controllerName %>Service service) {
+    this.service = service;
+  }
+
+  @GetMapping
+  public ResponseEntity<List<<%= controllerName %>>> all() {
+    return ResponseEntity.ok(service.findAll());
+  }
 
   @GetMapping("/{id}")
-  public ResponseEntity<<%= controllerName %>> one(@PathVariable Long id) {
-    return service.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+  public ResponseEntity<<%= controllerName %>> one(@PathVariable String id) {
+    return service.findById(id)
+      .map(ResponseEntity::ok)
+      .orElse(ResponseEntity.notFound().build());
   }
 
   @PostMapping
   public ResponseEntity<<%= controllerName %>> create(@RequestBody <%= controllerName %> m) {
-    return new ResponseEntity<>(service.create(m), HttpStatus.CREATED);
+    return ResponseEntity.status(HttpStatus.CREATED).body(service.create(m));
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<<%= controllerName %>> update(@PathVariable Long id, @RequestBody <%= controllerName %> m) {
-    return service.update(id, m).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+  public ResponseEntity<<%= controllerName %>> update(@PathVariable String id, @RequestBody <%= controllerName %> m) {
+    return service.update(id, m)
+      .map(ResponseEntity::ok)
+      .orElse(ResponseEntity.notFound().build());
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@PathVariable Long id) {
-    return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+  public ResponseEntity<Void> delete(@PathVariable String id) {
+    return service.delete(id)
+      ? ResponseEntity.noContent().build()
+      : ResponseEntity.notFound().build();
   }
 }

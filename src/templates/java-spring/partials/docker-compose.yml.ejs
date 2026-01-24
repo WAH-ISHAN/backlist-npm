@@ -1,7 +1,9 @@
 version: '3.8'
+
 services:
   db:
     image: postgres:16-alpine
+    container_name: <%= projectName %>-db
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
@@ -10,18 +12,38 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-<%= projectName %>}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
   app:
     build: .
+    container_name: <%= projectName %>-app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      - JWT_SECRET=${JWT_SECRET:-change_me_long_secret}
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME:-<%= projectName %>}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER:-postgres}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-password}
+      # Spring datasource
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME:-<%= projectName %>}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password}
+
+      # JPA defaults (optional but useful)
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+
+      # JWT (only needed if auth is enabled)
+      JWT_SECRET: ${JWT_SECRET:-change_me_long_secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-5h}
+
+      # CORS (optional)
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
       - "8080:8080"
+    restart: unless-stopped
 
 volumes:
   pgdata:

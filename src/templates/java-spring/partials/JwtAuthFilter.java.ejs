@@ -5,10 +5,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -28,16 +30,48 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
-    String header = request.getHeader("Authorization");
-    if (header != null && header.startsWith("Bearer ")) {
-      String token = header.substring(7);
-      try {
-        String subject = jwtService.validateAndGetSubject(token);
-        UserDetails ud = uds.loadUserByUsername(subject);
-        var auth = new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-      } catch (Exception ignored) {}
+
+    // Skip if already authenticated
+    if (SecurityContextHolder.getContext().getAuthentication() != null) {
+      chain.doFilter(request, response);
+      return;
     }
+
+    String header = request.getHeader("Authorization");
+
+    if (header != null && header.startsWith("Bearer ")) {
+      String token = header.substring(7).trim();
+
+      if (!token.isEmpty()) {
+        try {
+          String subject = jwtService.validateAndGetSubject(token); // usually email/username
+
+          UserDetails ud = uds.loadUserByUsername(subject);
+
+          var auth = new UsernamePasswordAuthenticationToken(
+              ud,
+              null,
+              ud.getAuthorities()
+          );
+          auth.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource()
+              .buildDetails(request));
+
+          SecurityContextHolder.getContext().setAuthentication(auth);
+
+        } catch (Exception ex) {
+          // Invalid token -> do not authenticate; proceed as anonymous
+          // (Optionally you could log here)
+        }
+      }
+    }
+
     chain.doFilter(request, response);
+  }
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    // Don't run filter for auth endpoints (optional)
+    String path = request.getServletPath();
+    return path != null && path.startsWith("/api/auth");
   }
 }

@@ -4,21 +4,43 @@ package <%= group %>.<%= projectName %>;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+
 import <%= group %>.<%= projectName %>.model.User;
 import <%= group %>.<%= projectName %>.repository.UserRepository;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class ApplicationSeeder {
+
   @Bean
-  CommandLineRunner seed(UserRepository userRepository, PasswordEncoder encoder) {
+  CommandLineRunner seed(UserRepository userRepository, PasswordEncoder encoder, Environment env) {
     return args -> {
-      if (userRepository.findByEmail("admin@example.com").isEmpty()) {
-        User admin = new User();
-        admin.setName("Admin");
-        admin.setEmail("admin@example.com");
-        admin.setPassword(encoder.encode("admin123"));
-        userRepository.save(admin);
+
+      // Enable/disable seeding via env (default: false)
+      boolean enabled = Boolean.parseBoolean(env.getProperty("SEED_ENABLED", "false"));
+      if (!enabled) return;
+
+      String email = env.getProperty("ADMIN_EMAIL", "admin@example.com");
+      String password = env.getProperty("ADMIN_PASSWORD", "admin123");
+      String name = env.getProperty("ADMIN_NAME", "Admin");
+
+      try {
+        if (userRepository.findByEmail(email).isEmpty()) {
+          User admin = new User();
+          admin.setName(name);
+          admin.setEmail(email);
+          admin.setPassword(encoder.encode(password));
+
+          userRepository.save(admin);
+
+          System.out.println("[Seeder] Admin user created: " + email);
+        } else {
+          System.out.println("[Seeder] Admin already exists: " + email);
+        }
+      } catch (Exception e) {
+        System.out.println("[Seeder] Seeding failed: " + e.getMessage());
       }
     };
   }

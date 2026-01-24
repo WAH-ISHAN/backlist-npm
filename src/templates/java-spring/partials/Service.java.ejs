@@ -2,27 +2,51 @@
 package <%= group %>.<%= projectName %>.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
+
 import <%= group %>.<%= projectName %>.repository.<%= modelName %>Repository;
 import <%= group %>.<%= projectName %>.model.<%= modelName %>;
 
 @Service
+@Transactional
 public class <%= modelName %>Service {
-  private final <%= modelName %>Repository repo;
-  public <%= modelName %>Service(<%= modelName %>Repository repo) { this.repo = repo; }
 
-  public List<<%= modelName %>> findAll() { return repo.findAll(); }
-  public Optional<<%= modelName %>> findById(Long id) { return repo.findById(id); }
-  public <%= modelName %> create(<%= modelName %> m) { return repo.save(m); }
+  private final <%= modelName %>Repository repo;
+
+  public <%= modelName %>Service(<%= modelName %>Repository repo) {
+    this.repo = repo;
+  }
+
+  @Transactional(readOnly = true)
+  public List<<%= modelName %>> findAll() {
+    return repo.findAll();
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<<%= modelName %>> findById(Long id) {
+    return repo.findById(id);
+  }
+
+  public <%= modelName %> create(<%= modelName %> m) {
+    // Ensure ID is not set by client
+    m.setId(null);
+    return repo.save(m);
+  }
+
   public Optional<<%= modelName %>> update(Long id, <%= modelName %> m) {
     return repo.findById(id).map(existing -> {
-      <% model.fields.forEach(f => { %>
-      existing.set<%= f.name.charAt(0).toUpperCase() + f.name.slice(1) %>(m.get<%= f.name.charAt(0).toUpperCase() + f.name.slice(1) %>());
+      <% (model.fields || []).forEach(f => { 
+           const cap = f.name.charAt(0).toUpperCase() + f.name.slice(1);
+      %>
+      existing.set<%= cap %>(m.get<%= cap %>());
       <% }) %>
       return repo.save(existing);
     });
   }
+
   public boolean delete(Long id) {
     if (!repo.existsById(id)) return false;
     repo.deleteById(id);

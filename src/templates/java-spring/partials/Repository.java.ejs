@@ -3,7 +3,14 @@ package <%= group %>.<%= projectName %>.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
 import <%= group %>.<%= projectName %>.model.<%= modelName %>;
 
 @Repository
-public interface <%= modelName %>Repository extends JpaRepository<<%= modelName %>, Long> {}
+public interface <%= modelName %>Repository extends JpaRepository<<%= modelName %>, Long> {
+
+  // Add common query methods here if needed.
+  // Example:
+  // Optional<<%= modelName %>> findByEmail(String email);
+
+}
