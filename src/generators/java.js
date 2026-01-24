@@ -96,7 +96,7 @@ async function generateJavaProject(options) {
     const endpoints = await analyzeFrontend(frontendSrcDir);
     const modelsToGenerate = new Map();
     (Array.isArray(endpoints) ? endpoints : []).forEach(ep => {
-      if (ep && ep.schemaFields && ep.controllerName && ep.controllerName !== 'Default' && !modelsToGenerate.has(ep.controllerName)) {
+      if (ep?.schemaFields && ep?.controllerName && ep.controllerName !== 'Default' && !modelsToGenerate.has(ep.controllerName)) {
         modelsToGenerate.set(ep.controllerName, {
           name: ep.controllerName,
           fields: Object.entries(ep.schemaFields).map(([key, type]) => ({ name: key, type }))
@@ -160,9 +160,9 @@ async function generateJavaProject(options) {
     console.log(chalk.cyan('  ./mvnw spring-boot:run   # or use your IDE to run Application class'));
 
   } catch (error) {
-    if (error.response && error.response.status) {
+    if (error.response?.status) {
       console.error(chalk.red(`  -> Initializr error status: ${error.response.status}`));
-      if (error.response.data) {
+      if (error.response?.data) {
         try {
           // Try read error text body for hints
           const text = (await (async () => {
