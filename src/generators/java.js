@@ -183,35 +183,44 @@ async function generateJavaProject(options) {
       await fs.ensureDir(controllerDir);
 
       for (const model of modelsToGenerate.values()) {
-        // FIXED: Added 'modelName: model.name' to satisfy the EJS template
+        const commonData = {
+          projectName,
+          groupId,
+          artifactId,
+          group: groupId,
+          model,
+          modelName: model.name,
+          controllerName: model.name // Added to fix Controller.java.ejs error
+        };
+
+        // Render Entity
         await renderAndWrite(
           getTemplatePath("java-spring/partials/Entity.java.ejs"),
           path.join(entityDir, `${model.name}.java`),
-          { projectName, groupId, artifactId, group: groupId, model, modelName: model.name }
+          commonData
         );
 
+        // Render Repository
         await renderAndWrite(
           getTemplatePath("java-spring/partials/Repository.java.ejs"),
           path.join(repoDir, `${model.name}Repository.java`),
-          { projectName, groupId, artifactId, group: groupId, model, modelName: model.name }
+          commonData
         );
 
+        // Render Controller
         await renderAndWrite(
           getTemplatePath("java-spring/partials/Controller.java.ejs"),
           path.join(controllerDir, `${model.name}Controller.java`),
-          { projectName, groupId, artifactId, group: groupId, model, modelName: model.name }
+          commonData
         );
       }
     } else {
-      console.log(chalk.yellow("  -> No models inferred (controllerName missing). Skipping entity/controller generation."));
+      console.log(chalk.yellow("  -> No models inferred. Skipping entity/controller generation."));
     }
 
     await appendApplicationProperties(projectDir, artifactId);
 
     console.log(chalk.green("  -> Java (Spring Boot) backend generation is complete!"));
-    console.log(chalk.yellow("\nNext steps:"));
-    console.log(chalk.cyan(`  cd ${path.basename(projectDir)}`));
-    console.log(chalk.cyan("  ./mvnw spring-boot:run   # or use your IDE to run the Application class"));
   } catch (error) {
     if (error && error.response && error.response.status) {
       console.error(chalk.red(`  -> Initializr error status: ${error.response.status}`));
