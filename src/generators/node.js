@@ -120,31 +120,31 @@ async function generateNodeProject(options) {
     // --- Step 4: Prepare and Write package.json ---
     const packageJsonContent = JSON.parse(await ejs.renderFile(getTemplatePath('node-ts-express/partials/package.json.ejs'), { projectName }));
 
-    if (dbType === 'mongoose') packageJsonContent.dependencies['mongoose'] = '^7.6.3';
+    if (dbType === 'mongoose') packageJsonContent.dependencies.mongoose = '^7.6.3';
     if (dbType === 'prisma') {
       packageJsonContent.dependencies['@prisma/client'] = '^5.6.0';
-      packageJsonContent.devDependencies['prisma'] = '^5.6.0';
+      packageJsonContent.devDependencies.prisma = '^5.6.0';
       packageJsonContent.prisma = { seed: `ts-node ${addSeeder ? 'scripts/seeder.ts' : 'prisma/seed.ts'}` };
     }
     if (addAuth) {
-      packageJsonContent.dependencies['jsonwebtoken'] = '^9.0.2';
-      packageJsonContent.dependencies['bcryptjs'] = '^2.4.3';
+      packageJsonContent.dependencies.jsonwebtoken = '^9.0.2';
+      packageJsonContent.dependencies.bcryptjs = '^2.4.3';
       packageJsonContent.devDependencies['@types/jsonwebtoken'] = '^9.0.5';
       packageJsonContent.devDependencies['@types/bcryptjs'] = '^2.4.6';
     }
     if (addSeeder) {
       packageJsonContent.devDependencies['@faker-js/faker'] = '^8.3.1';
-      if (!packageJsonContent.dependencies['chalk']) packageJsonContent.dependencies['chalk'] = '^4.1.2';
-      packageJsonContent.scripts['seed'] = 'ts-node scripts/seeder.ts';
-      packageJsonContent.scripts['destroy'] = 'ts-node scripts/seeder.ts -d';
+      if (!packageJsonContent.dependencies.chalk) packageJsonContent.dependencies.chalk = '^4.1.2';
+      packageJsonContent.scripts.seed = 'ts-node scripts/seeder.ts';
+      packageJsonContent.scripts.destroy = 'ts-node scripts/seeder.ts -d';
     }
     if (extraFeatures.includes('testing')) {
-      packageJsonContent.devDependencies['jest'] = '^29.7.0';
-      packageJsonContent.devDependencies['supertest'] = '^6.3.3';
+      packageJsonContent.devDependencies.jest = '^29.7.0';
+      packageJsonContent.devDependencies.supertest = '^6.3.3';
       packageJsonContent.devDependencies['@types/jest'] = '^29.5.10';
       packageJsonContent.devDependencies['@types/supertest'] = '^2.0.16';
       packageJsonContent.devDependencies['ts-jest'] = '^29.1.1';
-      packageJsonContent.scripts['test'] = 'jest --detectOpenHandles --forceExit';
+      packageJsonContent.scripts.test = 'jest --detectOpenHandles --forceExit';
     }
     if (extraFeatures.includes('swagger')) {
       packageJsonContent.dependencies['swagger-ui-express'] = '^5.0.0';
