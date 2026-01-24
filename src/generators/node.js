@@ -224,63 +224,70 @@ async function generateNodeProject(options) {
       const jestConfig = "/** @type {import('ts-jest').JestConfigWithTsJest} */\nmodule.exports = {\n  preset: 'ts-jest',\n  testEnvironment: 'node',\n  verbose: true,\n};";
       await fs.writeFile(path.join(projectDir, 'jest.config.js'), jestConfig);
       await fs.ensureDir(path.join(projectDir, 'src', '__tests__'));
-      await renderAndWrite(getTemplatePath('node-ts-express/partials/App.test.ts.ejs'), path.join(projectDir, 'src', '__tests__', 'api.test.ts'), { addAuth });
-    }
+          await renderAndWrite(getTemplatePath('node-ts-express/partials/App.test.ts.ejs'), path.join(projectDir, 'src', '__tests__', 'api.test.ts'), { addAuth });
+        }
 
-    // --- Step 9: Generate Main Route File & Inject Logic into Server ---
-    // 🔥 FIX: Auth Endpoints ටික routes.ts එකට යවන්න එපා. 
-    // මොකද ඒවා Auth.routes.ts එකෙන් වෙනම හැන්ඩ්ල් වෙනවා.
-    const nonAuthEndpoints = endpoints.filter(ep => ep.controllerName !== 'Auth');
+        // --- Step 9: Generate Main Route File & Inject Logic into Server ---
+        // 🔥 FIX: Auth Endpoints ටික routes.ts එකට යවන්න එපා. 
+        // මොකද ඒවා Auth.routes.ts එකෙන් වෙනම හැන්ඩ්ල් වෙනවා.
+        const nonAuthEndpoints = endpoints.filter(ep => ep.controllerName !== 'Auth');
 
-    // IMPORTANT: Pass 'nonAuthEndpoints' instead of 'endpoints'
-    await renderAndWrite(
-        getTemplatePath('node-ts-express/partials/routes.ts.ejs'), 
-        path.join(destSrcDir, 'routes.ts'), 
-        { endpoints: nonAuthEndpoints, addAuth, dbType } 
-    );
-    
-    let serverFileContent = await fs.readFile(path.join(destSrcDir, 'server.ts'), 'utf-8');
-    
-    // =========================================================================
-    // 👇 මේ ටික තමයි උඹේ Code එකෙන් Missing වෙලා තිබ්බේ. මේක නැතුව DB Connect වෙන්නේ නෑ.
-    // =========================================================================
-    let dbConnectionCode = '', swaggerInjector = '', authRoutesInjector = '';
+        // IMPORTANT: Pass 'nonAuthEndpoints' instead of 'endpoints'
+        await renderAndWrite(
+            getTemplatePath('node-ts-express/partials/routes.ts.ejs'), 
+            path.join(destSrcDir, 'routes.ts'), 
+            { endpoints: nonAuthEndpoints, addAuth, dbType } 
+        );
+        
+        let serverFileContent = await fs.readFile(path.join(destSrcDir, 'server.ts'), 'utf-8');
+        
+        // =========================================================================
+        // 👇 මේ ටික තමයි උඹේ Code එකෙන් Missing වෙලා තිබ්බේ. මේක නැතුව DB Connect වෙන්නේ නෑ.
+        // =========================================================================
+        let dbConnectionCode = '', swaggerInjector = '', authRoutesInjector = '';
 
-    if (dbType === 'mongoose') {
-        dbConnectionCode = `\n// --- Database Connection ---\nimport mongoose from 'mongoose';\nconst MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/${projectName}';\nmongoose.connect(MONGO_URI).then(() => console.log('MongoDB Connected...')).catch(err => console.error(err));\n// -------------------------\n`;
-    } else if (dbType === 'prisma') {
-        dbConnectionCode = `\nimport { PrismaClient } from '@prisma/client';\nexport const prisma = new PrismaClient();\n`;
-    }
-    if (extraFeatures.includes('swagger')) {
-        swaggerInjector = `\nimport { setupSwagger } from './utils/swagger';\nsetupSwagger(app);\n`;
-    }
-    if (addAuth) {
-        authRoutesInjector = `import authRoutes from './routes/Auth.routes';\napp.use('/api/auth', authRoutes);\n\n`;
-    }
+        if (dbType === 'mongoose') {
+            dbConnectionCode = `
+    // --- Database Connection ---
+    import mongoose from 'mongoose';
+    const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/${projectName}';
+    mongoose.connect(MONGO_URI).then(() => console.log('MongoDB Connected...')).catch(err => console.error(err));
+    // -------------------------
+    `;
+        } else if (dbType === 'prisma') {
+            dbConnectionCode = "\nimport { PrismaClient } from '@prisma/client';\nexport const prisma = new PrismaClient();\n";
+        }
+        if (extraFeatures.includes('swagger')) {
+            swaggerInjector = "\nimport { setupSwagger } from './utils/swagger';\nsetupSwagger(app);\n";
+        }
+        if (addAuth) {
+            authRoutesInjector = "import authRoutes from './routes/Auth.routes';\napp.use('/api/auth', authRoutes);\n\n";
+        }
 
-    serverFileContent = serverFileContent
-      .replace("dotenv.config();", `dotenv.config();${dbConnectionCode}`)
-      .replace('// INJECT:ROUTES', `${authRoutesInjector}import apiRoutes from './routes';\napp.use('/api', apiRoutes);`);
-      
-    const listenRegex = /(app\.listen\()/;
-    serverFileContent = serverFileContent.replace(listenRegex, `${swaggerInjector}\n$1`);
-    await fs.writeFile(path.join(destSrcDir, 'server.ts'), serverFileContent);
-    // =========================================================================
+        serverFileContent = serverFileContent
+          .replace("dotenv.config();", `dotenv.config();${dbConnectionCode}`)
+          .replace('// INJECT:ROUTES', `${authRoutesInjector}import apiRoutes from './routes';
+    app.use('/api', apiRoutes);`);
+          
+        const listenRegex = /(app\.listen\()/;
+        serverFileContent = serverFileContent.replace(listenRegex, `${swaggerInjector}\n$1`);
+        await fs.writeFile(path.join(destSrcDir, 'server.ts'), serverFileContent);
+        // =========================================================================
 
 
-    // --- Step 10: Install Dependencies & Run Post-install Scripts ---
-    console.log(chalk.magenta('  -> Installing dependencies... This may take a moment.'));
-    await execa('npm', ['install'], { cwd: projectDir });
-    if (dbType === 'prisma') {
-      console.log(chalk.blue('  -> Running `prisma generate`...'));
-      await execa('npx', ['prisma', 'generate'], { cwd: projectDir });
-    }
-    
-    // --- Step 11: Generate Final Files (.env.example) ---
-    let envContent = `PORT=${port}\n`;
-    if (dbType === 'mongoose') {
-        envContent += `MONGO_URI=mongodb://root:example@db:27017/${projectName}?authSource=admin\n`;
-    } else if (dbType === 'prisma') {
+        // --- Step 10: Install Dependencies & Run Post-install Scripts ---
+        console.log(chalk.magenta('  -> Installing dependencies... This may take a moment.'));
+        await execa('npm', ['install'], { cwd: projectDir });
+        if (dbType === 'prisma') {
+          console.log(chalk.blue('  -> Running `prisma generate`...'));
+          await execa('npx', ['prisma', 'generate'], { cwd: projectDir });
+        }
+        
+        // --- Step 11: Generate Final Files (.env.example) ---
+        let envContent = `PORT=${port}\n`;
+        if (dbType === 'mongoose') {
+            envContent += `MONGO_URI=mongodb://root:example@db:27017/${projectName}?authSource=admin\n`;
+        } else if (dbType === 'prisma') {
         envContent += `DATABASE_URL="postgresql://user:password@db:5432/${projectName}?schema=public"\n`;
     }
     if (addAuth) envContent += 'JWT_SECRET=your_super_secret_jwt_key_12345\n';
