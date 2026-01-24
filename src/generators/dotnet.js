@@ -74,8 +74,8 @@ async function generateDotnetProject (options) {
     const programCsPath = path.join(projectDir, 'Program.cs')
     let programCsContent = await fs.readFile(programCsPath, 'utf-8')
 
-    const usingStatements = 'using Microsoft.EntityFrameworkCore;\nusing ' + projectName + '.Data;\n'
-    programCsContent = usingStatements + programCsContent
+    const usingStatements = `using Microsoft.EntityFrameworkCore;\nusing ${projectName}.Data;\n`
+    programCsContent = `${usingStatements}${programCsContent}`
 
     const dbContextService = '// Configure the database context\nbuilder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseInMemoryDatabase("MyDb"));'
     programCsContent = programCsContent.replace('builder.Services.AddControllers();', `builder.Services.AddControllers();\n\n${dbContextService}`)
