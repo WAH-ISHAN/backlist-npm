@@ -11,31 +11,30 @@ async function generateNodeProject (options) {
   const { projectDir, projectName, frontendSrcDir, dbType, addAuth, addSeeder, extraFeatures = [] } = options
   const port = 8000
 
-  try {
-    // --- Step 1: Analyze Frontend ---
-    console.log(chalk.blue('  -> Analyzing frontend for API endpoints...'))
+  // --- Step 1: Analyze Frontend ---
+  console.log(chalk.blue('  -> Analyzing frontend for API endpoints...'))
 
-    // NOTE: 'let' use kala api endpoints wenas karana nisa
-    let endpoints = await analyzeFrontend(frontendSrcDir)
+  // NOTE: 'let' use kala api endpoints wenas karana nisa
+  let endpoints = await analyzeFrontend(frontendSrcDir)
 
-    if (endpoints.length > 0) {
-      console.log(chalk.green(`  -> Found ${endpoints.length} endpoints.`))
+  if (endpoints.length > 0) {
+    console.log(chalk.green(`  -> Found ${endpoints.length} endpoints.`))
 
-      // ============================================================
-      // 🔥 FIX START: Sanitizing Endpoints Logic
-      // ============================================================
-      endpoints = endpoints.map(ep => {
-        // 1. Path eka sudda kirima (/api/v1/users -> ['users'])
-        // 'api', 'v1', histhan ain karanawa
-        const parts = ep.path.split('/').filter(part => part !== '' && part !== 'api' && part !== 'v1')
+    // ============================================================
+    // 🔥 FIX START: Sanitizing Endpoints Logic
+    // ============================================================
+    endpoints = endpoints.map(ep => {
+      // 1. Path eka sudda kirima (/api/v1/users -> ['users'])
+      // 'api', 'v1', histhan ain karanawa
+      const parts = ep.path.split('/').filter(part => part !== '' && part !== 'api' && part !== 'v1')
 
-        // Resource eka hoyaganeema (e.g., 'users')
-        const resource = parts[0] || 'Default'
+      // Resource eka hoyaganeema (e.g., 'users')
+      const resource = parts[0] || 'Default'
 
-        // 2. Controller Name eka hadeema (CamelCase: 'users' -> 'Users')
-        // Special Case: resource eka 'auth' nam Controller eka 'Auth'
-        // 'V1' kiyana eka ain wenne methanin
-        const controllerName = `${resource.charAt(0).toUpperCase()}${resource.slice(1)}`
+      // 2. Controller Name eka hadeema (CamelCase: 'users' -> 'Users')
+      // Special Case: resource eka 'auth' nam Controller eka 'Auth'
+      // 'V1' kiyana eka ain wenne methanin
+      const controllerName = `${resource.charAt(0).toUpperCase()}${resource.slice(1)}`
 
         // 3. Function Names hariyatama map kirima
         let functionName = ''
