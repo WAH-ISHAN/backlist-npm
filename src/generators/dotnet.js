@@ -77,7 +77,7 @@ async function generateDotnetProject(options) {
     let usingStatements = 'using Microsoft.EntityFrameworkCore;\nusing '+projectName+'.Data;\n';
     programCsContent = usingStatements + programCsContent;
     
-    let dbContextService = `// Configure the database context\nbuilder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseInMemoryDatabase("MyDb"));`;
+    let dbContextService = '// Configure the database context\nbuilder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseInMemoryDatabase("MyDb"));';
     programCsContent = programCsContent.replace('builder.Services.AddControllers();', `builder.Services.AddControllers();\n\n${dbContextService}`);
     
     // Enable CORS to allow frontend communication

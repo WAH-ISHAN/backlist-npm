@@ -116,10 +116,10 @@ async function generateNodeProject(options) {
     await fs.ensureDir(destSrcDir);
     await fs.copy(getTemplatePath('node-ts-express/base/server.ts'), path.join(destSrcDir, 'server.ts'));
     await fs.copy(getTemplatePath('node-ts-express/base/tsconfig.json'), path.join(projectDir, 'tsconfig.json'));
-    
+
     // --- Step 4: Prepare and Write package.json ---
     const packageJsonContent = JSON.parse(await ejs.renderFile(getTemplatePath('node-ts-express/partials/package.json.ejs'), { projectName }));
-    
+
     if (dbType === 'mongoose') packageJsonContent.dependencies['mongoose'] = '^7.6.3';
     if (dbType === 'prisma') {
       packageJsonContent.dependencies['@prisma/client'] = '^5.6.0';
@@ -135,8 +135,8 @@ async function generateNodeProject(options) {
     if (addSeeder) {
       packageJsonContent.devDependencies['@faker-js/faker'] = '^8.3.1';
       if (!packageJsonContent.dependencies['chalk']) packageJsonContent.dependencies['chalk'] = '^4.1.2';
-      packageJsonContent.scripts['seed'] = `ts-node scripts/seeder.ts`;
-      packageJsonContent.scripts['destroy'] = `ts-node scripts/seeder.ts -d`;
+      packageJsonContent.scripts['seed'] = 'ts-node scripts/seeder.ts';
+      packageJsonContent.scripts['destroy'] = 'ts-node scripts/seeder.ts -d';
     }
     if (extraFeatures.includes('testing')) {
       packageJsonContent.devDependencies['jest'] = '^29.7.0';
@@ -152,7 +152,7 @@ async function generateNodeProject(options) {
       packageJsonContent.devDependencies['@types/swagger-ui-express'] = '^4.1.6';
     }
     await fs.writeJson(path.join(projectDir, 'package.json'), packageJsonContent, { spaces: 2 });
-    
+
     // --- Step 5: Generate DB-specific files & Controllers ---
     if (modelsToGenerate.size > 0) {
         await fs.ensureDir(path.join(destSrcDir, 'controllers'));
@@ -192,9 +192,9 @@ async function generateNodeProject(options) {
             if (await fs.pathExists(userModelPath)) {
                 let userModelContent = await fs.readFile(userModelPath, 'utf-8');
                 if (!userModelContent.includes('bcryptjs')) {
-                    userModelContent = userModelContent.replace(`import mongoose, { Schema, Document } from 'mongoose';`, `import mongoose, { Schema, Document } from 'mongoose';\nimport bcrypt from 'bcryptjs';`);
-                    const preSaveHook = `\n// Hash password before saving\nUserSchema.pre('save', async function(next) {\n  if (!this.isModified('password')) { return next(); }\n  const salt = await bcrypt.genSalt(10);\n  this.password = await bcrypt.hash(this.password, salt);\n  next();\n});\n`;
-                    userModelContent = userModelContent.replace(`// Create and export the Model`, `${preSaveHook}\n// Create and export the Model`);
+                    userModelContent = userModelContent.replace("import mongoose, { Schema, Document } from 'mongoose';", "import mongoose, { Schema, Document } from 'mongoose';\nimport bcrypt from 'bcryptjs';");
+                    const preSaveHook = "\n// Hash password before saving\nUserSchema.pre('save', async function(next) {\n  if (!this.isModified('password')) { return next(); }\n  const salt = await bcrypt.genSalt(10);\n  this.password = await bcrypt.hash(this.password, salt);\n  next();\n});\n";
+                    userModelContent = userModelContent.replace('// Create and export the Model', `${preSaveHook}\n// Create and export the Model`);
                     await fs.writeFile(userModelPath, userModelContent);
                 }
             }
@@ -221,7 +221,7 @@ async function generateNodeProject(options) {
     }
     if (extraFeatures.includes('testing')) {
       console.log(chalk.blue('  -> Generating testing boilerplate...'));
-      const jestConfig = `/** @type {import('ts-jest').JestConfigWithTsJest} */\nmodule.exports = {\n  preset: 'ts-jest',\n  testEnvironment: 'node',\n  verbose: true,\n};`;
+      const jestConfig = "/** @type {import('ts-jest').JestConfigWithTsJest} */\nmodule.exports = {\n  preset: 'ts-jest',\n  testEnvironment: 'node',\n  verbose: true,\n};";
       await fs.writeFile(path.join(projectDir, 'jest.config.js'), jestConfig);
       await fs.ensureDir(path.join(projectDir, 'src', '__tests__'));
       await renderAndWrite(getTemplatePath('node-ts-express/partials/App.test.ts.ejs'), path.join(projectDir, 'src', '__tests__', 'api.test.ts'), { addAuth });
@@ -283,7 +283,7 @@ async function generateNodeProject(options) {
     } else if (dbType === 'prisma') {
         envContent += `DATABASE_URL="postgresql://user:password@db:5432/${projectName}?schema=public"\n`;
     }
-    if (addAuth) envContent += `JWT_SECRET=your_super_secret_jwt_key_12345\n`;
+    if (addAuth) envContent += 'JWT_SECRET=your_super_secret_jwt_key_12345\n';
     if (extraFeatures.includes('docker')) {
         envContent += `\n# Docker-compose credentials (used in docker-compose.yml)\nDB_USER=user\nDB_PASSWORD=password\nDB_NAME=${projectName}`;
     }
