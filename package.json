@@ -1,6 +1,6 @@
 {
   "name": "create-backlist",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "An advanced, multi-language backend generator based on frontend analysis. Smart Freemium SaaS CLI.",
   "type": "module",
   "bin": {
