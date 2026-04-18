@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const fs = require("fs-extra");
-const path = require("path");
-const { glob } = require("glob");
+import fs from "fs-extra";
+import path from "node:path";
+import { glob } from "glob";
 
-const parser = require("@babel/parser");
-const traverse = require("@babel/traverse").default;
+import parser from "@babel/parser";
+import _traverse from "@babel/traverse";
+const traverse = _traverse.default || _traverse;
 
 const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete"]);
 
@@ -200,11 +201,10 @@ function isJSONStringifyCall(node) {
 // -------------------------
 // DB insights: guess db + infer models + seeds
 // -------------------------
-function guessDbTypeFromRepo(rootDir) {
-  // Best-effort; if it's only frontend repo, usually null.
+function guessDbTypeFromRepo(rootDir, endpoints = []) {
   try {
     const pkgPath = path.join(rootDir, "package.json");
-    if (!fs.existsSync(pkgPath)) return null;
+    if (!fs.existsSync(pkgPath)) return heuristicallyGuessDB(endpoints);
 
     const pkg = fs.readJsonSync(pkgPath);
     const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
@@ -214,10 +214,23 @@ function guessDbTypeFromRepo(rootDir) {
     if (deps.sequelize) return "sql-sequelize";
     if (deps.typeorm) return "sql-typeorm";
 
-    return null;
+    return heuristicallyGuessDB(endpoints);
   } catch {
-    return null;
+    return heuristicallyGuessDB(endpoints);
   }
+}
+
+function heuristicallyGuessDB(endpoints) {
+  // Free Tier / Default Intelligence:
+  // Analyze data complexity. If highly nested schemas are prominent, default NoSQL.
+  // If many flat, relational-looking fields exist, default SQL.
+  let maxNesting = 0;
+  for (const ep of endpoints) {
+    if (ep.schemaFields && Object.keys(ep.schemaFields).length > 6) {
+       maxNesting++;
+    }
+  }
+  return maxNesting > 3 ? "mongodb-mongoose" : "sql-prisma";
 }
 
 function inferModelsFromEndpoints(endpoints) {
@@ -278,7 +291,7 @@ function generateSeedsFromModels(models, perModel = 3) {
 // -------------------------
 // MAIN frontend analyzer
 // -------------------------
-async function analyzeFrontend(srcPath) {
+export async function analyzeFrontend(srcPath) {
   if (!srcPath) throw new Error("analyzeFrontend: srcPath is required");
   if (!fs.existsSync(srcPath)) {
     throw new Error(`The source directory '${srcPath}' does not exist.`);
@@ -409,7 +422,7 @@ async function analyzeFrontend(srcPath) {
 // -------------------------
 // Optional: full project analyze (endpoints + db insights)
 // -------------------------
-async function analyze(projectRoot = process.cwd()) {
+export async function analyze(projectRoot = process.cwd()) {
   const rootDir = path.resolve(projectRoot);
 
   const frontendSrc = ["src", "app", "pages"]
@@ -420,17 +433,64 @@ async function analyze(projectRoot = process.cwd()) {
 
   const models = inferModelsFromEndpoints(endpoints);
   const seeds = generateSeedsFromModels(models, 3);
-  const guessedDb = guessDbTypeFromRepo(rootDir);
+  const guessedDb = guessDbTypeFromRepo(rootDir, endpoints);
 
   return {
     rootDir: normalizeSlashes(rootDir),
     endpoints,
     dbInsights: {
-      guessedDb, // null | mongodb-mongoose | sql-prisma | ...
+      guessedDb, // mongodb-mongoose | sql-prisma 
       models,    // inferred entities + fields
       seeds,     // dummy seed rows
     },
   };
 }
 
-module.exports = { analyzeFrontend, analyze };
+// -------------------------
+// NEW v7.0: Low-Cost Path Scanner (Standard Tier)
+// -------------------------
+export async function performLowCostPathScan(frontendSrcDir, endpoints) {
+  // Ensures routes match frontend expectations
+  const inconsistencies = [];
+  endpoints.forEach(ep => {
+    if (!ep.sourceFile || !ep.route) return;
+    const fileBase = path.basename(ep.sourceFile).split('.')[0].toLowerCase();
+    const routeBase = ep.controllerName ? ep.controllerName.toLowerCase() : '';
+    
+    // If the file containing the fetch is named 'AdminPanel' but route points to 'Products', note it.
+    if (fileBase !== 'index' && fileBase !== 'api' && routeBase && !fileBase.includes(routeBase) && !routeBase.includes(fileBase)) {
+      inconsistencies.push({
+        file: ep.sourceFile,
+        routeCalled: ep.route,
+        warning: `Path Scanner: File '${fileBase}' calls unrelated route '${routeBase}'. Potential naming drift.`
+      });
+    }
+  });
+  return inconsistencies;
+}
+
+// -------------------------
+// NEW v7.0: Component Component Tree Extractor (DOM Sync Level 2)
+// -------------------------
+export async function extractComponentTreeTypes(frontendSrcDir) {
+  // A heuristic simulation of live DOM cross-checking:
+  // Parses JSX tags (<input type="date">) to build forced validations.
+  if (!fs.existsSync(frontendSrcDir)) return [];
+  
+  const files = await glob(`${normalizeSlashes(frontendSrcDir)}/**/*.{jsx,tsx}`, {
+    ignore: ["**/node_modules/**", "**/dist/**", "**/build/**"]
+  });
+
+  const extractedTypes = [];
+  
+  for (const file of files) {
+    try {
+      const code = await fs.readFile(file, "utf-8");
+      if (code.includes('type="date"')) extractedTypes.push({ file, fieldType: 'Date', rawHTMLType: 'date' });
+      if (code.includes('type="number"')) extractedTypes.push({ file, fieldType: 'Number', rawHTMLType: 'number' });
+      if (code.includes('type="email"')) extractedTypes.push({ file, fieldType: 'Email', rawHTMLType: 'email' });
+    } catch {}
+  }
+
+  return extractedTypes;
+}

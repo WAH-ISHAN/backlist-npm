@@ -1,6 +1,6 @@
-const { execa } = require('execa');
+import { execa } from 'execa';
 
-async function isCommandAvailable(command) {
+export async function isCommandAvailable(command) {
   try {
     // Using a harmless version command to check for presence
     const checkCommand = command === 'java' ? '-version' : '--version';
@@ -10,5 +10,3 @@ async function isCommandAvailable(command) {
     return false;
   }
 }
-
-module.exports = { isCommandAvailable };

@@ -1,0 +1,26 @@
+<%- dbType === 'prisma' ? "import { prisma } from '../../infrastructure/adapters/database';" : "import " + modelName + " from '../../domain/models/" + modelName + ".model';" %>
+
+<%- typeof aiDbRelations !== 'undefined' ? aiDbRelations : '// Default DB Relations' %>
+
+export class <%- modelName %>Repository {
+  
+  static async findAll() {
+<%- dbType === 'prisma' ? "    return prisma." + modelName.toLowerCase() + ".findMany();" : "    return " + modelName + ".find();" %>
+  }
+
+  static async findById(id: string) {
+<%- dbType === 'prisma' ? "    return prisma." + modelName.toLowerCase() + ".findUnique({ where: { id } });" : "    return " + modelName + ".findById(id);" %>
+  }
+
+  static async create(data: any) {
+<%- dbType === 'prisma' ? "    return prisma." + modelName.toLowerCase() + ".create({ data });" : "    return " + modelName + ".create(data);" %>
+  }
+
+  static async update(id: string, data: any) {
+<%- dbType === 'prisma' ? "    return prisma." + modelName.toLowerCase() + ".update({ where: { id }, data });" : "    return " + modelName + ".findByIdAndUpdate(id, data, { new: true });" %>
+  }
+
+  static async delete(id: string) {
+<%- dbType === 'prisma' ? "    return prisma." + modelName.toLowerCase() + ".delete({ where: { id } });" : "    return " + modelName + ".findByIdAndDelete(id);" %>
+  }
+}

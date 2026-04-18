@@ -1,0 +1,27 @@
+import { <%- modelName %>Repository } from '../../infrastructure/adapters/<%- modelName %>.repository';
+
+<%- typeof aiSecurityConfig !== 'undefined' ? aiSecurityConfig : '// Default domain logic security' %>
+
+export class <%- modelName %>Service {
+  
+  static async getAll() {
+    return <%- modelName %>Repository.findAll();
+  }
+
+  static async getById(id: string) {
+    return <%- modelName %>Repository.findById(id);
+  }
+
+  static async create(payload: any) {
+    // --- Domain Business Logic here ---
+    return <%- modelName %>Repository.create(payload);
+  }
+
+  static async update(id: string, payload: any) {
+    return <%- modelName %>Repository.update(id, payload);
+  }
+
+  static async delete(id: string) {
+    return <%- modelName %>Repository.delete(id);
+  }
+}

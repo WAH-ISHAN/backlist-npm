@@ -1,11 +1,11 @@
-const chalk = require("chalk");
-const { execa } = require("execa");
-const fs = require("fs-extra");
-const path = require("path");
-const ejs = require("ejs");
+import chalk from "chalk";
+import { execa } from "execa";
+import fs from "fs-extra";
+import path from "node:path";
+import ejs from "ejs";
 
-const { analyzeFrontend } = require("../analyzer");
-const { renderAndWrite, getTemplatePath } = require("./template");
+import { analyzeFrontend } from "../analyzer.js";
+import { renderAndWrite, getTemplatePath } from "./template.js";
 
 function stripQuery(p) {
   return String(p || "").split("?")[0];
@@ -71,7 +71,7 @@ function sanitizeEndpoints(endpoints) {
   });
 }
 
-async function generateNodeProject(options) {
+export async function generateNodeProject(options) {
   const {
     projectDir,
     projectName,
@@ -181,13 +181,20 @@ async function generateNodeProject(options) {
 
     await fs.writeJson(path.join(projectDir, "package.json"), packageJsonContent, { spaces: 2 });
 
-    // --- Step 5: DB + Controllers ---
+    // --- Step 5: DB + Hexagonal Architecture Scaffolding ---
     if (modelsToGenerate.size > 0) {
-      await fs.ensureDir(path.join(destSrcDir, "controllers"));
+      const portDir = path.join(destSrcDir, "application", "ports", "controllers");
+      const serviceDir = path.join(destSrcDir, "domain", "services");
+      const repoDir = path.join(destSrcDir, "infrastructure", "adapters", "repositories");
+      const modelDir = path.join(destSrcDir, "domain", "models");
+      
+      await fs.ensureDir(portDir);
+      await fs.ensureDir(serviceDir);
+      await fs.ensureDir(repoDir);
 
       if (dbType === "mongoose") {
-        console.log(chalk.blue("  -> Generating Mongoose models and controllers..."));
-        await fs.ensureDir(path.join(destSrcDir, "models"));
+        console.log(chalk.blue("  -> Generating Mongoose domain models..."));
+        await fs.ensureDir(modelDir);
 
         for (const [modelName, modelData] of modelsToGenerate.entries()) {
           const schema = (modelData.fields || []).reduce((acc, field) => {
@@ -196,28 +203,54 @@ async function generateNodeProject(options) {
           }, {});
           await renderAndWrite(
             getTemplatePath("node-ts-express/partials/Model.ts.ejs"),
-            path.join(destSrcDir, "models", `${modelName}.model.ts`),
+            path.join(modelDir, `${modelName}.model.ts`),
             { modelName, schema, projectName }
           );
         }
       } else if (dbType === "prisma") {
         console.log(chalk.blue("  -> Generating Prisma schema..."));
         await fs.ensureDir(path.join(projectDir, "prisma"));
-        await renderAndWrite(
-          getTemplatePath("node-ts-express/partials/PrismaSchema.prisma.ejs"),
-          path.join(projectDir, "prisma", "schema.prisma"),
-          { modelsToGenerate: Array.from(modelsToGenerate.values()) }
-        );
+        // Check if we already have a generated schema from AI Pass 1 (options.aiBlocks.prismaSchema)
+        if (options.aiBlocks && options.aiBlocks.prismaSchema) {
+           await fs.writeFile(path.join(projectDir, "prisma", "schema.prisma"), options.aiBlocks.prismaSchema);
+        } else {
+           await renderAndWrite(
+             getTemplatePath("node-ts-express/partials/PrismaSchema.prisma.ejs"),
+             path.join(projectDir, "prisma", "schema.prisma"),
+             { modelsToGenerate: Array.from(modelsToGenerate.values()) }
+           );
+        }
       }
 
-      console.log(chalk.blue("  -> Generating controllers..."));
+      console.log(chalk.blue("  -> Generating Hexagonal Architecture layers (Controllers, Services, Repositories)..."));
       for (const [modelName] of modelsToGenerate.entries()) {
-        const templateFile = dbType === "mongoose" ? "Controller.ts.ejs" : "PrismaController.ts.ejs";
         if (modelName !== "Auth") {
+          const blockData = { 
+            modelName, 
+            projectName, 
+            dbType,
+            aiSecurityConfig: options.aiBlocks?.aiSecurityConfig,
+            aiDbRelations: options.aiBlocks?.aiDbRelations,
+            aiValidationLogic: options.aiBlocks?.aiValidationLogic
+          };
+
+          // Controller (Port)
           await renderAndWrite(
-            getTemplatePath(`node-ts-express/partials/${templateFile}`),
-            path.join(destSrcDir, "controllers", `${modelName}.controller.ts`),
-            { modelName, projectName }
+            getTemplatePath(`node-ts-express/partials/HexController.ts.ejs`),
+            path.join(portDir, `${modelName}.controller.ts`),
+            blockData
+          );
+          // Service (Domain)
+          await renderAndWrite(
+            getTemplatePath(`node-ts-express/partials/HexService.ts.ejs`),
+            path.join(serviceDir, `${modelName}.service.ts`),
+            blockData
+          );
+          // Repository (Adapter)
+          await renderAndWrite(
+            getTemplatePath(`node-ts-express/partials/HexRepository.ts.ejs`),
+            path.join(repoDir, `${modelName}.repository.ts`),
+            blockData
           );
         }
       }
@@ -370,5 +403,3 @@ app.use('/api', apiRoutes);`
     throw error;
   }
 }
-
-module.exports = { generateNodeProject };

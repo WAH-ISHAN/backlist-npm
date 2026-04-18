@@ -1,0 +1,3 @@
+AiModuls/
+*.gguf
+.backlist-config.json
