@@ -30,8 +30,6 @@ import { generatePythonProject } from '../src/generators/python.js';
 
 // ── Constants ────────────────────────────────────────────────────────────
 const CONFIG_PATH = path.join(os.homedir(), '.backlist-config.json');
-const MODEL_PATH = path.join(__dirname, '..', 'AiModuls', 'gemma-4-e2b.gguf');
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  ASCII Art Banner
 // ═══════════════════════════════════════════════════════════════════════════
@@ -242,17 +240,10 @@ async function callAIProcessor(astJsonData, apiKey, options) {
   console.log('');
   console.log(chalk.hex('#BF40FF').bold('  ─── 🧠 Pro Mode: Autonomous Self-Healing AI Agent ───'));
   console.log('');
-  console.log(chalk.gray(`  → Model  : ${MODEL_PATH}`));
+  console.log(chalk.gray(`  → Model  : meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8`));
   console.log(chalk.gray(`  → Key    : ${'●'.repeat(Math.min(apiKey.length, 24))}...`));
   console.log(chalk.gray(`  → Input  : ${astJsonData.length} endpoint(s) from AST analysis`));
   console.log('');
-
-  if (!(await fs.pathExists(MODEL_PATH))) {
-    console.log(chalk.red.bold('  ❌ Model file not found!'));
-    console.log(chalk.yellow(`  Expected at: ${MODEL_PATH}`));
-    console.log(chalk.gray('  → Download the Gemma GGUF model and place it in ./AiModuls/'));
-    throw new Error('Local Gemma model file not found. Cannot proceed with Pro AI Mode.');
-  }
 
   // Live Thought Stream Callback
   let currentOra = ora({
@@ -272,7 +263,7 @@ async function callAIProcessor(astJsonData, apiKey, options) {
     }
   };
 
-  const aiAgent = new BacklistAIAgent(MODEL_PATH, apiKey, onThought);
+  const aiAgent = new BacklistAIAgent(apiKey, onThought);
   await aiAgent.init();
 
   let existingPrisma = null;
